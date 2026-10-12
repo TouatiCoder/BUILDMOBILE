@@ -51,14 +51,14 @@ export default function InventoryOperationScreen() {
   // Include the stock quantity in the option so the user can choose the correct source.
   const sourceWarehouseOptions: Option[] = useMemo(() => {
     if (!material) return [];
-    return warehouseOptions.flatMap((warehouse) => {
+    return (warehouses.data ?? []).flatMap((warehouse) => {
       const stock = material.inventory
-        .filter((row) => row.warehouseId === warehouse.value)
+        .filter((row) => row.warehouseId === warehouse.id)
         .reduce((sum, row) => sum + toNumber(row.quantity), 0);
       if (!Number.isFinite(stock) || stock <= 0) return [];
       return [{
-        value: warehouse.value,
-        label: warehouse.label,
+        value: warehouse.id,
+        label: warehouse.name,
         description: `${formatNumber(stock, locale)} ${material.unit}`,
       }];
     });
