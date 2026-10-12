@@ -1,6 +1,0 @@
-{
-  "name": "BuildStock Pro",
-  "description": "Gestion intelligente de chantier - Stocks, Matériaux, Projets, Calculatrices & Biométrie",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
