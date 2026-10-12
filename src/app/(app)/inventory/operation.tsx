@@ -47,6 +47,32 @@ export default function InventoryOperationScreen() {
   const materialOptions: Option[] = (materials.data ?? []).map((m) => ({ value: m.id, label: m.name, description: m.unit }));
   const warehouseOptions: Option[] = (warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name, description: w.location ?? undefined }));
 
+  // A source warehouse is selectable only when this material has positive stock there.
+  // Include the stock quantity in the option so the user can choose the correct source.
+  const sourceWarehouseOptions: Option[] = useMemo(() => {
+    if (!material) return [];
+    return (warehouses.data ?? []).flatMap((warehouse) => {
+      const stock = material.inventory
+        .filter((row) => row.warehouseId === warehouse.id)
+        .reduce((sum, row) => sum + toNumber(row.quantity), 0);
+      if (!Number.isFinite(stock) || stock <= 0) return [];
+      return [{
+        value: warehouse.id,
+        label: warehouse.name,
+        description: `${formatNumber(stock, locale)} ${material.unit}`,
+      }];
+    });
+  }, [material, warehouses.data, locale]);
+
+  const resetOperationFields = (nextMode: Mode) => {
+    setMode(nextMode);
+    setWarehouseId(null);
+    setSourceId(null);
+    setDestinationId(null);
+    setQuantity('');
+    setErrors({});
+  };
+
   const submit = () => {
     const next: Record<string, string> = {};
     const qty = parseDecimalInput(quantity);
@@ -54,9 +80,19 @@ export default function InventoryOperationScreen() {
     if (qty === null || !Number.isFinite(qty) || qty <= 0) next.quantity = t('inventory.quantityPositiveError');
     if (mode === 'entry' && !warehouseId) next.warehouse = t('inventory.warehouseRequiredError');
     if (mode === 'transfer') {
-      if (!sourceId) next.source = t('inventory.sourceWarehouseRequiredError');
+      if (!sourceId || !sourceWarehouseOptions.some((option) => option.value === sourceId)) {
+        next.source = t('inventory.sourceWarehouseRequiredError');
+      }
       if (!destinationId) next.destination = t('inventory.destinationWarehouseRequiredError');
-      if (sourceId && destinationId && sourceId === destinationId) next.destination = t('inventory.destinationWarehouseRequiredError');
+      if (sourceId && destinationId && sourceId === destinationId) {
+        next.destination = t('inventory.destinationWarehouseRequiredError');
+      }
+      if (qty !== null && Number.isFinite(qty) && qty > 0 && availableInSource !== null && qty > availableInSource) {
+        next.quantity = t('inventory.insufficientSourceStock');
+      }
+      if (sourceId && availableInSource !== null && availableInSource <= 0) {
+        next.source = t('inventory.insufficientSourceStock');
+      }
     }
     setErrors(next);
     if (Object.keys(next).length > 0 || !materialId || qty === null) return;
@@ -94,7 +130,7 @@ export default function InventoryOperationScreen() {
       <Stack.Screen options={{ title }} />
       <ChipGroup<Mode>
         value={mode}
-        onChange={setMode}
+        onChange={resetOperationFields}
         options={[
           { value: 'entry', label: t('inventory.stockEntry') },
           { value: 'transfer', label: t('inventory.stockTransfer') },
@@ -106,7 +142,14 @@ export default function InventoryOperationScreen() {
           required
           value={materialId}
           options={materialOptions}
-          onChange={setMaterialId}
+          onChange={(value) => {
+            setMaterialId(value);
+            setWarehouseId(null);
+            setSourceId(null);
+            setDestinationId(null);
+            setQuantity('');
+            setErrors({});
+          }}
           placeholder={t('inventory.selectMaterialPlaceholder')}
           error={errors.material}
           searchable
@@ -126,13 +169,20 @@ export default function InventoryOperationScreen() {
               label={t('inventory.sourceWarehouse')}
               required
               value={sourceId}
-              options={warehouseOptions}
-              onChange={setSourceId}
+              options={sourceWarehouseOptions}
+              onChange={(value) => {
+                setSourceId(value);
+                setDestinationId(null);
+                setQuantity('');
+                setErrors((previous) => ({ ...previous, source: '', destination: '', quantity: '' }));
+              }}
               placeholder={t('inventory.selectSourceWarehouse')}
               error={errors.source}
             />
             {availableInSource !== null && material ? (
               <Banner tone="info" message={`${t('inventory.availableInSource')}: ${formatNumber(availableInSource, locale)} ${material.unit}`} />
+            ) : material && sourceWarehouseOptions.length === 0 ? (
+              <Banner tone="warning" message={`${t('inventory.insufficientSourceStock')} (0 ${material.unit})`} />
             ) : null}
             <SelectField
               label={t('inventory.destinationWarehouse')}
