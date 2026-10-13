@@ -15,12 +15,12 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { colors, spacing } from '@/theme/tokens';
 
 /**
- * Password reset request — POST /api/auth/forgot-password (unchanged endpoint).
+ * Mobile password-reset request.
  *
- * Backlog rule: the confirmation must not reveal whether the e-mail is
- * registered. The website API answers 404 for unknown addresses, so the app
- * shows the same generic confirmation for 200 and 404. The new password is
- * then set on the web page opened from the e-mail link.
+ * The app calls the same backend endpoint as the website. The backend sends
+ * the email through Resend and returns a generic 2xx response whether or not
+ * the account exists. The reset link opens the website's reset-password page;
+ * the Resend API key must never be bundled in the mobile app.
  */
 export default function ForgotPasswordScreen() {
   const { t } = useI18n();
@@ -40,7 +40,7 @@ export default function ForgotPasswordScreen() {
     const normalized = email.trim().toLowerCase();
     try {
       const res = await rawRequest('/api/auth/forgot-password', { method: 'POST', body: { email: normalized }, anonymous: true });
-      if ((res.status >= 200 && res.status < 300) || res.status === 404) {
+      if (res.status >= 200 && res.status < 300) {
         setSentTo(normalized);
       } else {
         setError(t('auth.forgotPassword.unexpectedError'));
