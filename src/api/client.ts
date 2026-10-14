@@ -91,6 +91,8 @@ export async function rawRequest(path: string, options: RequestOptions = {}): Pr
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       credentials: 'omit',
       signal: controller.signal,
+      // Keep every request fresh, including calls made outside TanStack Query.
+      cache: 'no-store',
     });
   } catch (error) {
     const aborted = controller.signal.aborted && !options.signal?.aborted;
