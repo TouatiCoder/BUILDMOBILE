@@ -25,6 +25,17 @@ function RootNavigator() {
     if (state.status !== 'booting') void SplashScreen.hideAsync();
   }, [state.status]);
 
+  useEffect(() => {
+    if (state.status !== 'signed-in') return;
+
+    // Refresh active server-backed queries across every signed-in screen, not only inventory.
+    const refreshInterval = setInterval(() => {
+      void queryClient.invalidateQueries({ refetchType: 'active' });
+    }, 1_000);
+
+    return () => clearInterval(refreshInterval);
+  }, [state.status]);
+
   const workspace = state.status === 'signed-in' ? workspaceFor(state.user) : null;
   // Signed in but the profile (and so the workspace) is not known yet.
   const resolvingProfile = state.status === 'signed-in' && workspace === null;
