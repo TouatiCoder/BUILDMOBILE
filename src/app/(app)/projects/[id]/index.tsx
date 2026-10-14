@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
 
-import { ApiError } from '@/api/client';
 import { projectsApi } from '@/api/endpoints';
 import { Banner, ErrorState, ListSkeleton } from '@/components/feedback';
 import { ListGroup, ListRow, Screen } from '@/components/layout';
@@ -11,7 +10,7 @@ import { useApiMutation, useConfirm, usePermissions } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatDate, fullName, toNumber } from '@/lib/format';
 import { PROJECT_STATUS_FLOW, projectStatusLabel, projectStatusTone, projectTypeLabel } from '@/lib/labels';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,8 +19,6 @@ export default function ProjectDetailScreen() {
   const confirm = useConfirm();
 
   const project = useQuery({ queryKey: ['projects', 'detail', id], queryFn: () => projectsApi.get(id) });
-  const milestones = useQuery({ queryKey: ['projects', id, 'milestones'], queryFn: () => projectsApi.milestones(id), retry: false });
-  const delays = useQuery({ queryKey: ['projects', id, 'delays'], queryFn: () => projectsApi.delays(id), retry: false });
 
   const setStatus = useApiMutation({
     mutationFn: (status: string) => projectsApi.setStatus(id, status),
@@ -129,33 +126,6 @@ export default function ProjectDetailScreen() {
         <KeyValue icon="school-outline" label={t('project.engineer')} value={fullName(p.structuralEngineer) || t('project.notDefined')} />
       </AppCard>
 
-      <BacklogSection
-        title={t('projects.milestones')}
-        query={milestones}
-        emptyLabel={t('projects.noMilestones')}
-        render={(items) =>
-          items.map((m) => (
-            <ListRow key={m.id} icon="flag-outline" title={m.title} subtitle={`${formatDate(m.due_date, locale)} · ${m.status}`} />
-          ))
-        }
-      />
-      <BacklogSection
-        title={t('projects.delays')}
-        query={delays}
-        emptyLabel={t('projects.noDelays')}
-        render={(items) =>
-          items.map((d) => (
-            <ListRow
-              key={d.id}
-              icon="time-outline"
-              iconTone="warning"
-              title={d.reason}
-              subtitle={`${d.days_delayed} ${t('inventory.daysShort')} · ${formatDate(d.created_at, locale)}`}
-            />
-          ))
-        }
-      />
-
       <View style={{ gap: spacing.sm }}>
         {can('edit_project') ? (
           <AppButton title={t('project.editProject')} icon="create-outline" variant="secondary" onPress={() => router.push({ pathname: '/projects/[id]/edit', params: { id } })} />
@@ -171,30 +141,3 @@ export default function ProjectDetailScreen() {
   );
 }
 
-function BacklogSection<T>({
-  title,
-  query,
-  emptyLabel,
-  render,
-}: {
-  title: string;
-  query: { isLoading: boolean; isError: boolean; error: unknown; data?: { items: T[] } };
-  emptyLabel: string;
-  render: (items: T[]) => React.ReactNode;
-}) {
-  const { t } = useI18n();
-  let body: React.ReactNode;
-  if (query.isLoading) body = <ListSkeleton rows={1} />;
-  else if (query.isError) {
-    // These routes use raw-SQL tables that may be absent on a given server (see PROJECT_AUDIT.md).
-    const unavailable = query.error instanceof ApiError && query.error.status >= 500;
-    body = <Banner tone="neutral" message={unavailable ? t('projects.backlogUnavailable') : String((query.error as Error)?.message)} />;
-  } else if (!query.data || query.data.items.length === 0) body = <AppText variant="small" color={colors.textMuted}>{emptyLabel}</AppText>;
-  else body = <ListGroup>{render(query.data.items)}</ListGroup>;
-  return (
-    <View>
-      <SectionHeader title={title} />
-      {body}
-    </View>
-  );
-}
