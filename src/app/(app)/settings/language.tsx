@@ -1,17 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Constants from 'expo-constants';
 import { Stack } from 'expo-router';
-import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Banner } from '@/components/feedback';
 import { Screen } from '@/components/layout';
-import { AppCard, AppText, KeyValue, SectionHeader } from '@/components/primitives';
+import { AppText, SectionHeader } from '@/components/primitives';
 import { useToast } from '@/components/toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localeNames, locales, type Locale } from '@/i18n/locale';
 import { translate } from '@/i18n/translate';
-import { API_BASE_URL } from '@/lib/config';
 import { colors, radius, spacing, TOUCH_TARGET } from '@/theme/tokens';
 
 const CODES: Record<Locale, string> = { fr: 'FR', ar: 'AR', en: 'EN' };
@@ -20,12 +16,10 @@ const CODES: Record<Locale, string> = { fr: 'FR', ar: 'AR', en: 'EN' };
 export default function LanguageScreen() {
   const { t, locale, setLocale } = useI18n();
   const toast = useToast();
-  const [needsRestart, setNeedsRestart] = useState(false);
 
   const choose = async (next: Locale) => {
     if (next === locale) return;
-    const restart = await setLocale(next);
-    setNeedsRestart(restart);
+    await setLocale(next);
     toast.show('success', translate(next, 'common.saved'));
   };
 
@@ -57,11 +51,6 @@ export default function LanguageScreen() {
           );
         })}
       </View>
-      {needsRestart ? <Banner tone="info" message={t('common.restartForRtl')} /> : null}
-      <AppCard>
-        <KeyValue label={t('settings.version')} value={Constants.expoConfig?.version ?? '—'} />
-        <KeyValue label={t('auth.apiServer')} value={API_BASE_URL || '—'} />
-      </AppCard>
     </Screen>
   );
 }
