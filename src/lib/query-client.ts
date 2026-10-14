@@ -3,6 +3,8 @@ import { focusManager, QueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@/api/client';
 
+const LIVE_REFRESH_INTERVAL_MS = 1_000;
+
 function shouldRetry(failureCount: number, error: unknown): boolean {
   // Client errors (auth, validation, permissions, not found) never succeed on retry.
   if (error instanceof ApiError && error.status >= 400 && error.status < 500) return false;
@@ -12,10 +14,11 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Keep data fresh for only 2 seconds so screens that don't poll still show
-      // recent server values after navigation or tab switches. Screens that poll
-      // (refetchInterval) always bypass staleTime anyway.
-      staleTime: 2_000,
+      // Refresh every query on every mounted app page once per second.
+      // Screen-level refetchInterval values must not override this cadence.
+      staleTime: 0,
+      refetchInterval: LIVE_REFRESH_INTERVAL_MS,
+      refetchIntervalInBackground: false,
       gcTime: 5 * 60_000,
       retry: shouldRetry,
       // React Native doesn't emit browser window-focus events. focusManager below
@@ -31,8 +34,7 @@ export const queryClient = new QueryClient({
 });
 
 // Bridge React Native foreground/background state into TanStack Query.
-// Returning to the app invalidates cached data so inventory, dashboard, and other
-// active screens fetch the latest server values instead of showing stale cache.
+// Returning to the app invalidates cached data so every active query gets fresh server values.
 focusManager.setEventListener((setFocused) => {
   const onAppStateChange = (status: AppStateStatus) => {
     const active = status === 'active';
