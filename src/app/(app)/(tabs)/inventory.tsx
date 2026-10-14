@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useFocusEffect, useIsFocused } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { inventoryApi } from '@/api/endpoints';
@@ -22,6 +22,7 @@ type StockFilter = 'all' | 'low' | 'critical';
 export default function InventoryScreen() {
   const { t, locale } = useI18n();
   const { can } = usePermissions();
+  const isFocused = useIsFocused();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
   const [category, setCategory] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export default function InventoryScreen() {
   const stats = useQuery({
     queryKey: ['inventory', 'stats'],
     queryFn: inventoryApi.stats,
-    refetchInterval: 5000,
+    refetchInterval: isFocused ? 5000 : false,
     refetchIntervalInBackground: false,
   });
   const filters = useQuery({
@@ -47,9 +48,16 @@ export default function InventoryScreen() {
         lowStock: filter === 'low',
         criticalStock: filter === 'critical',
       }),
-    refetchInterval: 5000,
+    refetchInterval: isFocused ? 5000 : false,
     refetchIntervalInBackground: false,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void stats.refetch();
+      void materials.refetch();
+    }, [stats, materials]),
+  );
 
   const categoryOptions: Option[] = useMemo(
     () => (filters.data?.categories ?? []).map((c) => ({ value: c, label: c })),

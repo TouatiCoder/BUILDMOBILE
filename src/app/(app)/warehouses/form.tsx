@@ -53,7 +53,7 @@ function WarehouseForm({ warehouse }: { warehouse?: Warehouse }) {
   const [errors, setErrors] = useState<{ name?: string; capacity?: string }>({});
 
   const back = () => router.back();
-  const create = useApiMutation({ mutationFn: warehousesApi.create, invalidate: [['warehouses']], successMessage: t('warehouse.createdSuccess'), onSuccess: back });
+  const create = useApiMutation({ mutationFn: warehousesApi.create, invalidate: [['warehouses'], ['inventory']], successMessage: t('warehouse.createdSuccess'), onSuccess: back });
   const update = useApiMutation({
     mutationFn: (input: Parameters<typeof warehousesApi.update>[1]) => warehousesApi.update(warehouse!.id, input),
     invalidate: [['warehouses'], ['inventory']],

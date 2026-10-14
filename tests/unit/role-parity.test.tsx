@@ -255,7 +255,7 @@ async function renderScreen(role: Role, Screen: React.ComponentType) {
             <Stack />
           </Providers>
         ),
-        index: Screen,
+        index: Screen as any,
       },
       { initialUrl: '/' },
     );

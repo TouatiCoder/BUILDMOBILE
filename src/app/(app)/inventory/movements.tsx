@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
-import { useState } from 'react';
+import { Stack, useFocusEffect, useIsFocused } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { FlatList, View } from 'react-native';
 
 import { inventoryApi } from '@/api/endpoints';
@@ -18,8 +18,21 @@ const PAGE = 50;
 /** GET /api/inventory/movements?limit= — the API has no offset, so "load more" raises the limit. */
 export default function MovementsScreen() {
   const { t, locale } = useI18n();
+  const isFocused = useIsFocused();
   const [limit, setLimit] = useState(PAGE);
-  const q = useQuery({ queryKey: ['inventory', 'movements', limit], queryFn: () => inventoryApi.movements(limit), placeholderData: (prev) => prev });
+  const q = useQuery({
+    queryKey: ['inventory', 'movements', limit],
+    queryFn: () => inventoryApi.movements(limit),
+    placeholderData: (prev) => prev,
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      void q.refetch();
+    }, [q]),
+  );
 
   const describeRoute = (m: StockMovementRow) => {
     const from = m.source_warehouse?.name ?? (m.source_type === 'supplier' ? t('inventory.supplier') : null);

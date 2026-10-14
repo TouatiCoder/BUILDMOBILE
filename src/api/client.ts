@@ -68,7 +68,12 @@ export type RawResponse = { status: number; headers: Headers; body: unknown; sen
  */
 export async function rawRequest(path: string, options: RequestOptions = {}): Promise<RawResponse> {
   assertApiConfigured();
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    // Prevent native HTTP caches, proxies, and CDNs from serving stale data.
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
+  };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   const token = options.anonymous ? null : session.getToken();
   if (token) headers.Cookie = `${SESSION_COOKIE_NAME}=${token}`;

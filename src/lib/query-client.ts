@@ -12,7 +12,10 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      // Keep data fresh for only 2 seconds so screens that don't poll still show
+      // recent server values after navigation or tab switches. Screens that poll
+      // (refetchInterval) always bypass staleTime anyway.
+      staleTime: 2_000,
       gcTime: 5 * 60_000,
       retry: shouldRetry,
       // React Native doesn't emit browser window-focus events. focusManager below

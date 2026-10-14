@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { router, Stack } from 'expo-router';
-import { useMemo } from 'react';
+import { router, Stack, useFocusEffect, useIsFocused } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -39,21 +39,38 @@ export default function DashboardScreen() {
   const isManager = role === 'site_manager';
   const isEngineer = role === 'structural_engineer';
   const businessRole = isAdmin || isManager || isEngineer;
+  const isFocused = useIsFocused();
 
   const projects = useQuery({ queryKey: ['projects', 'dashboard'], queryFn: () => projectsApi.list({ limit: 100 }), enabled: businessRole });
-  const invStats = useQuery({ queryKey: ['inventory', 'stats'], queryFn: inventoryApi.stats, enabled: isAdmin || isManager });
+  const invStats = useQuery({
+    queryKey: ['inventory', 'stats'],
+    queryFn: inventoryApi.stats,
+    enabled: isAdmin || isManager,
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
+  });
   const critical = useQuery({
     queryKey: ['inventory', 'materials', { criticalStock: true }],
     queryFn: () => inventoryApi.materials({ criticalStock: true }),
     enabled: isAdmin || isManager,
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
   });
   const low = useQuery({
     queryKey: ['inventory', 'materials', { lowStock: true }],
     queryFn: () => inventoryApi.materials({ lowStock: true }),
     enabled: isAdmin || isManager,
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
   });
   const orders = useQuery({ queryKey: ['orders', 'summary'], queryFn: () => ordersApi.list({ limit: 1000 }), enabled: isAdmin || isManager });
-  const movements = useQuery({ queryKey: ['inventory', 'movements', 5], queryFn: () => inventoryApi.movements(5), enabled: isManager });
+  const movements = useQuery({
+    queryKey: ['inventory', 'movements', 5],
+    queryFn: () => inventoryApi.movements(5),
+    enabled: isManager,
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
+  });
   const calculations = useQuery({ queryKey: ['tools', 'calculations', 'all'], queryFn: () => toolsApi.calculations(), enabled: isFieldRole });
   const checklists = useQuery({
     queryKey: ['checklists', { status: 'in_progress', type: 'all' }],
@@ -61,6 +78,24 @@ export default function DashboardScreen() {
     enabled: isFieldRole,
   });
   const notifications = useQuery({ queryKey: ['notifications'], queryFn: notificationsApi.list, enabled: businessRole });
+
+  useFocusEffect(
+    useCallback(() => {
+      void projects.refetch();
+      if (isAdmin || isManager) {
+        void invStats.refetch();
+        void critical.refetch();
+        void low.refetch();
+        void orders.refetch();
+      }
+      if (isManager) void movements.refetch();
+      if (isFieldRole) {
+        void calculations.refetch();
+        void checklists.refetch();
+      }
+      if (businessRole) void notifications.refetch();
+    }, [isAdmin, isManager, isFieldRole, businessRole, projects, invStats, critical, low, orders, movements, calculations, checklists, notifications]),
+  );
 
   const stockAlerts = useMemo(() => [...(critical.data ?? []), ...(low.data ?? [])], [critical.data, low.data]);
   const unread = (notifications.data ?? []).filter((n) => !n.isRead).length;

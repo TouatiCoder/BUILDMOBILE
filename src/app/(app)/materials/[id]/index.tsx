@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 
 import { inventoryApi, materialsApi } from '@/api/endpoints';
@@ -18,11 +19,29 @@ export default function MaterialDetailScreen() {
   const { t, locale } = useI18n();
   const { can } = usePermissions();
   const confirm = useConfirm();
+  const isFocused = useIsFocused();
 
-  const material = useQuery({ queryKey: ['inventory', 'material', id], queryFn: () => materialsApi.get(id) });
+  const material = useQuery({
+    queryKey: ['inventory', 'material', id],
+    queryFn: () => materialsApi.get(id),
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
+  });
   // GET /api/materials/[id] only includes the latest inventory row; the inventory
   // list carries every warehouse row for this material.
-  const allMaterials = useQuery({ queryKey: ['inventory', 'materials', { all: true }], queryFn: () => inventoryApi.materials({}) });
+  const allMaterials = useQuery({
+    queryKey: ['inventory', 'materials', { all: true }],
+    queryFn: () => inventoryApi.materials({}),
+    refetchInterval: isFocused ? 5_000 : false,
+    refetchIntervalInBackground: false,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      void material.refetch();
+      void allMaterials.refetch();
+    }, [material, allMaterials]),
+  );
   const rows = allMaterials.data?.find((m) => m.id === id)?.inventory ?? material.data?.inventory ?? [];
 
   const remove = useApiMutation({
