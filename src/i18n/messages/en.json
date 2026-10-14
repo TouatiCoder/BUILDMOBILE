@@ -43,7 +43,8 @@
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "showConfirmPassword": "Show confirm password",
-      "hideConfirmPassword": "Hide confirm password"
+      "hideConfirmPassword": "Hide confirm password",
+      "emailFailed": "Your account was created, but the welcome email could not be sent. Please check the server email configuration."
     },
     "signupClosed": {
       "title": "Company creation is closed",
