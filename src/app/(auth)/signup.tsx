@@ -83,7 +83,12 @@ export default function SignupScreen() {
         Alert.alert(t('auth.signup.title'), t('signup.platformAccount'), [{ text: 'OK', onPress: () => router.back() }]);
         return;
       }
-      toast.show('success', t('signup.success'));
+      if (res.emailSent === false) {
+        // Account creation succeeded, but the backend reported an email delivery failure.
+        Alert.alert(t('signup.title'), res.emailMessage || t('signup.emailFailed'), [{ text: 'OK' }]);
+      } else {
+        toast.show('success', t('signup.success'));
+      }
       const login = await signIn(email, v.password);
       if (!login.ok) {
         // Account exists; let the user sign in manually.
