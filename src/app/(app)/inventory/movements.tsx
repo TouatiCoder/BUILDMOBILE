@@ -24,7 +24,7 @@ export default function MovementsScreen() {
     queryKey: ['inventory', 'movements', limit],
     queryFn: () => inventoryApi.movements(limit),
     placeholderData: (prev) => prev,
-    refetchInterval: isFocused ? 5_000 : false,
+    refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
   });
 
