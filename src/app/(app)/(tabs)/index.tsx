@@ -46,21 +46,21 @@ export default function DashboardScreen() {
     queryKey: ['inventory', 'stats'],
     queryFn: inventoryApi.stats,
     enabled: isAdmin || isManager,
-    refetchInterval: isFocused ? 5_000 : false,
+    refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
   });
   const critical = useQuery({
     queryKey: ['inventory', 'materials', { criticalStock: true }],
     queryFn: () => inventoryApi.materials({ criticalStock: true }),
     enabled: isAdmin || isManager,
-    refetchInterval: isFocused ? 5_000 : false,
+    refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
   });
   const low = useQuery({
     queryKey: ['inventory', 'materials', { lowStock: true }],
     queryFn: () => inventoryApi.materials({ lowStock: true }),
     enabled: isAdmin || isManager,
-    refetchInterval: isFocused ? 5_000 : false,
+    refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
   });
   const orders = useQuery({ queryKey: ['orders', 'summary'], queryFn: () => ordersApi.list({ limit: 1000 }), enabled: isAdmin || isManager });
@@ -68,7 +68,7 @@ export default function DashboardScreen() {
     queryKey: ['inventory', 'movements', 5],
     queryFn: () => inventoryApi.movements(5),
     enabled: isManager,
-    refetchInterval: isFocused ? 5_000 : false,
+    refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
   });
   const calculations = useQuery({ queryKey: ['tools', 'calculations', 'all'], queryFn: () => toolsApi.calculations(), enabled: isFieldRole });
