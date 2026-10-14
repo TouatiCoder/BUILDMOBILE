@@ -27,8 +27,17 @@ export default function InventoryScreen() {
   const [category, setCategory] = useState<string | null>(null);
   const debounced = useDebouncedValue(search);
 
-  const stats = useQuery({ queryKey: ['inventory', 'stats'], queryFn: inventoryApi.stats });
-  const filters = useQuery({ queryKey: ['inventory', 'filters'], queryFn: inventoryApi.filters });
+  const stats = useQuery({
+    queryKey: ['inventory', 'stats'],
+    queryFn: inventoryApi.stats,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+  });
+  const filters = useQuery({
+    queryKey: ['inventory', 'filters'],
+    queryFn: inventoryApi.filters,
+    staleTime: 60_000,
+  });
   const materials = useQuery({
     queryKey: ['inventory', 'materials', { search: debounced, filter, category }],
     queryFn: () =>
@@ -38,6 +47,8 @@ export default function InventoryScreen() {
         lowStock: filter === 'low',
         criticalStock: filter === 'critical',
       }),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   });
 
   const categoryOptions: Option[] = useMemo(
