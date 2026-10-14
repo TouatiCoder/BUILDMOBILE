@@ -31,7 +31,7 @@ export default function InventoryScreen() {
   const stats = useQuery({
     queryKey: ['inventory', 'stats'],
     queryFn: inventoryApi.stats,
-    refetchInterval: isFocused ? 5000 : false,
+    refetchInterval: isFocused ? 1000 : false,
     refetchIntervalInBackground: false,
   });
   const filters = useQuery({
@@ -48,7 +48,7 @@ export default function InventoryScreen() {
         lowStock: filter === 'low',
         criticalStock: filter === 'critical',
       }),
-    refetchInterval: isFocused ? 5000 : false,
+    refetchInterval: isFocused ? 1000 : false,
     refetchIntervalInBackground: false,
   });
 
