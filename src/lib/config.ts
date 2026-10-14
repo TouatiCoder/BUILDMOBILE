@@ -7,7 +7,11 @@ function normalizeBaseUrl(raw: string | undefined): string {
   return value;
 }
 
-export const API_BASE_URL = normalizeBaseUrl(process.env.EXPO_PUBLIC_API_URL);
+// Production fallback points to the same deployed BuildStock backend used by the website.
+// EXPO_PUBLIC_API_URL still overrides this for local development or other environments.
+export const API_BASE_URL = normalizeBaseUrl(
+  process.env.EXPO_PUBLIC_API_URL || 'http://2.24.139.220:3001',
+);
 
 /** Web address used for features that are only available on the website. */
 export const WEB_APP_URL = normalizeBaseUrl(process.env.EXPO_PUBLIC_WEB_URL) || API_BASE_URL;
