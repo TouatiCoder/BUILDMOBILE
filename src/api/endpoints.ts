@@ -216,5 +216,5 @@ export const billingApi = {
 export const registrationApi = {
   status: () => request<{ open: boolean }>('/api/register/status', { anonymous: true }),
   register: (input: RegisterInput) =>
-    request<{ success: true; isPlatformAdmin?: boolean }>('/api/register', { method: 'POST', body: input, anonymous: true }),
+    request<{ success: true; isPlatformAdmin?: boolean; emailSent?: boolean; emailMessage?: string }>('/api/register', { method: 'POST', body: input, anonymous: true }),
 };
