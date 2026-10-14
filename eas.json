@@ -11,12 +11,22 @@
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "environment": "preview"
+      "android": {
+        "buildType": "apk"
+      },
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://2.24.139.220:3001",
+        "EXPO_PUBLIC_WEB_URL": "http://2.24.139.220:3001"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "environment": "production"
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://2.24.139.220:3001",
+        "EXPO_PUBLIC_WEB_URL": "http://2.24.139.220:3001"
+      }
     }
   },
   "submit": {
