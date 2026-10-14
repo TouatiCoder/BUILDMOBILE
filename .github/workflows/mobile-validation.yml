@@ -1,0 +1,29 @@
+name: Mobile Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript checks
+        run: npm run typecheck
+      - name: Unit and calculator tests
+        run: npm test
+      - name: Expo configuration diagnostics
+        run: npx expo-doctor
