@@ -22,9 +22,7 @@ import {
 } from '@/lib/labels';
 import { colors, radius, spacing, type Tone } from '@/theme/tokens';
 
-/** Backlog "Alerte 1 : Projets hors budget" threshold — actual cost above budget by more than 5 %. */
-export const OVER_BUDGET_THRESHOLD = 0.05;
-
+/** Projects with any budget overrun are shown as dashboard alerts. */
 export function overBudgetProjects(projects: Project[]): (Project & { overrunPct: number })[] {
   return projects
     .map((p) => {
@@ -32,7 +30,7 @@ export function overBudgetProjects(projects: Project[]): (Project & { overrunPct
       const cost = toNumber(p.currentCost);
       return { ...p, overrunPct: budget > 0 ? (cost - budget) / budget : 0 };
     })
-    .filter((p) => p.overrunPct > OVER_BUDGET_THRESHOLD)
+    .filter((p) => p.overrunPct > 0)
     .sort((a, b) => b.overrunPct - a.overrunPct);
 }
 
