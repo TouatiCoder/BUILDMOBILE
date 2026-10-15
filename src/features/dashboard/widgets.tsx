@@ -101,29 +101,39 @@ function Section({
 
 export function OverBudgetSection({ projects, loading }: { projects: Project[]; loading: boolean }) {
   const { t, locale } = useI18n();
-  const rows = overBudgetProjects(projects).slice(0, 3);
+  const alerts = overBudgetProjects(projects).slice(0, 3);
+  // Keep the dashboard useful even when no project is over budget: preview recent projects,
+  // but never label them as budget overruns.
+  const rows = alerts.length > 0
+    ? alerts.map((project) => ({ project, overrunPct: project.overrunPct }))
+    : [...projects]
+        .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? '')))
+        .slice(0, 2)
+        .map((project) => ({ project, overrunPct: null as number | null }));
   return (
     <Section title={t('dashboard.overBudgetProjects')} loading={loading} actionLabel={t('common.viewAll')} onAction={() => router.push('/projects')}>
       {rows.length === 0 ? (
         <AppCard>
           <View style={styles.okRow}>
-            <IconTile icon="checkmark-circle-outline" tone="success" size={36} />
+            <IconTile icon="briefcase-outline" tone="info" size={36} />
             <AppText variant="small" style={{ flex: 1 }}>
-              {t('dashboard.noOverBudget')}
+              {t('project.noProjectFound')}
             </AppText>
           </View>
         </AppCard>
       ) : (
         <ListGroup>
-          {rows.map((p) => (
+          {rows.map(({ project, overrunPct }) => (
             <ListRow
-              key={p.id}
-              icon="trending-up-outline"
-              iconTone="danger"
-              title={p.name}
-              subtitle={`${formatCurrency(toNumber(p.currentCost), locale)} / ${formatCurrency(toNumber(p.totalBudget), locale)}`}
-              right={<StatusBadge label={`+${Math.round(p.overrunPct * 100)}%`} tone="danger" />}
-              onPress={() => router.push({ pathname: '/projects/[id]', params: { id: p.id } })}
+              key={project.id}
+              icon={overrunPct !== null ? "trending-up-outline" : "briefcase-outline"}
+              iconTone={overrunPct !== null ? "danger" : "info"}
+              title={project.name}
+              subtitle={`${formatCurrency(toNumber(project.currentCost), locale)} / ${formatCurrency(toNumber(project.totalBudget), locale)}`}
+              right={overrunPct !== null
+                ? <StatusBadge label={`+${Math.round(overrunPct * 100)}%`} tone="danger" />
+                : <StatusBadge label={projectStatusLabel(t, project.status)} tone={projectStatusTone(project.status)} />}
+              onPress={() => router.push({ pathname: '/projects/[id]', params: { id: project.id } })}
             />
           ))}
         </ListGroup>
