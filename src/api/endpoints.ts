@@ -71,59 +71,89 @@ export const usersApi = {
 
 export const inventoryApi = {
   materials: async (params: { search?: string; category?: string; supplierId?: string; lowStock?: boolean; criticalStock?: boolean }) => {
-    // The existing website endpoint returns aggregate SQL rows (snake_case),
-    // not the Prisma InventoryMaterial shape used by the native screens.
-    // Normalize that response here without changing the website/API.
+    // The existing endpoint returns Prisma-shaped rows (camelCase), including
+    // inventory rows per warehouse. Accept snake_case too for older deployments.
     type WebsiteInventoryRow = {
       id: string;
       name: string;
       description?: string | null;
+      unitOfMeasure?: string | null;
       unit_of_measure?: string | null;
       unit?: string | null;
+      unitPrice?: string | number | null;
       unit_price?: string | number | null;
+      category?: string | { name?: string } | null;
       category_name?: string | null;
-      category?: { name?: string } | null;
+      supplierId?: string | null;
+      supplier_id?: string | null;
+      supplier?: { id?: string; name?: string } | null;
       supplier_name?: string | null;
-      supplier?: { name?: string } | null;
+      inventory?: Array<{
+        id: string;
+        quantity?: string | number | null;
+        minThreshold?: string | number | null;
+        min_threshold?: string | number | null;
+        maxThreshold?: string | number | null;
+        max_threshold?: string | number | null;
+        warehouseId?: string | null;
+        warehouse_id?: string | null;
+        warehouse?: { id: string; name: string } | null;
+      }>;
       current_stock?: string | number | null;
       min_stock_level?: string | number | null;
       critical_threshold?: string | number | null;
+      companyId?: string;
+      createdAt?: string;
+      updatedAt?: string;
     };
     const rows = await api.get<WebsiteInventoryRow[]>('/api/inventory/materials', {
       search: params.search,
-      categoryId: params.category,
-      // The website API currently supports lowStock, but not supplierId or a
-      // separate criticalStock filter. Do not send parameters it silently ignores.
-      lowStock: params.lowStock || params.criticalStock ? 'true' : undefined,
+      category: params.category,
+      supplierId: params.supplierId,
+      lowStock: params.lowStock ? 'true' : undefined,
+      criticalStock: params.criticalStock ? 'true' : undefined,
     });
     return rows.map((row) => {
-      const quantity = row.current_stock ?? 0;
-      const minimum = row.min_stock_level ?? row.critical_threshold ?? 0;
+      const inventory = Array.isArray(row.inventory)
+        ? row.inventory.map((item) => ({
+            id: item.id,
+            quantity: item.quantity ?? 0,
+            minThreshold: item.minThreshold ?? item.min_threshold ?? 0,
+            maxThreshold: item.maxThreshold ?? item.max_threshold ?? null,
+            warehouseId: item.warehouseId ?? item.warehouse_id ?? null,
+            warehouse: item.warehouse ?? null,
+          }))
+        : [{
+            id: `${row.id}:aggregate`,
+            quantity: row.current_stock ?? 0,
+            minThreshold: row.min_stock_level ?? row.critical_threshold ?? 0,
+            maxThreshold: null,
+            warehouseId: null,
+            warehouse: null,
+          }];
+      const supplierName = typeof row.supplier === 'object' && row.supplier
+        ? row.supplier.name
+        : row.supplier_name;
+      const categoryName = typeof row.category === 'string'
+        ? row.category
+        : row.category?.name ?? row.category_name ?? null;
       return {
         id: row.id,
         name: row.name,
         description: row.description ?? null,
-        unit: row.unit_of_measure ?? row.unit ?? '',
-        unitPrice: row.unit_price ?? 0,
-        category: row.category_name ?? row.category?.name ?? null,
-        supplierId: null,
-        companyId: '',
-        createdAt: '',
-        updatedAt: '',
-        // The current website endpoint only provides company-wide totals,
-        // not stock quantities per warehouse. Keep the total visible but do
-        // not invent a warehouse allocation; server-side operations validate stock.
-        inventory: [{
-          id: `${row.id}:aggregate`,
-          quantity,
-          minThreshold: minimum,
-          maxThreshold: null,
-          warehouseId: null,
-          warehouse: null,
-        }],
-        supplier: row.supplier_name || row.supplier?.name
-          ? { id: '', name: row.supplier_name ?? row.supplier?.name ?? '' }
-          : null,
+        unit: row.unitOfMeasure ?? row.unit_of_measure ?? row.unit ?? '',
+        unitPrice: row.unitPrice ?? row.unit_price ?? 0,
+        category: categoryName,
+        supplierId: row.supplierId ?? row.supplier_id ?? null,
+        companyId: row.companyId ?? '',
+        createdAt: row.createdAt ?? '',
+        updatedAt: row.updatedAt ?? '',
+        inventory,
+        supplier: typeof row.supplier === 'object' && row.supplier?.id && row.supplier.name
+          ? { id: row.supplier.id, name: row.supplier.name }
+          : supplierName
+            ? { id: row.supplierId ?? row.supplier_id ?? '', name: supplierName }
+            : null,
       } satisfies InventoryMaterial;
     });
   },
