@@ -184,7 +184,7 @@ export default function DashboardScreen() {
               { icon: 'calculator-outline', label: t('common.calculationHubTitle'), href: '/tools', tone: 'violet' },
             ]}
           />
-          <StockAlertsSection materials={stockAlerts} loading={critical.isLoading || low.isLoading} limit={5} />
+          <StockAlertsSection materials={stockAlerts} loading={dashboardMaterials.isLoading} limit={5} />
           <OrdersInProgressSection orders={orders.data ?? []} loading={orders.isLoading} />
           <MovementsSection movements={movements.data ?? []} loading={movements.isLoading} />
         </>
