@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { inventoryApi, warehousesApi } from '@/api/endpoints';
-import { Banner, ErrorState, ListSkeleton } from '@/components/feedback';
+import { ErrorState, ListSkeleton } from '@/components/feedback';
 import { ChipGroup, SelectField, AppInput, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
 import { AppButton, AppCard } from '@/components/primitives';
 import { useApiMutation } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
-import { formatNumber, parseDecimalInput, toNumber } from '@/lib/format';
+import { parseDecimalInput } from '@/lib/format';
 import { spacing } from '@/theme/tokens';
 
 type Mode = 'entry' | 'transfer';
@@ -33,12 +33,6 @@ export default function InventoryOperationScreen() {
 
   const materials = useQuery({ queryKey: ['inventory', 'materials', { all: true }], queryFn: () => inventoryApi.materials({}) });
   const warehouses = useQuery({ queryKey: ['warehouses'], queryFn: warehousesApi.list });
-
-  const material = materials.data?.find((m) => m.id === materialId);
-  const availableInSource = useMemo(() => {
-    if (!material || !sourceId) return null;
-    return material.inventory.filter((r) => r.warehouseId === sourceId).reduce((sum, r) => sum + toNumber(r.quantity), 0);
-  }, [material, sourceId]);
 
   const onDone = () => router.back();
   const entry = useApiMutation({ mutationFn: inventoryApi.entry, invalidate: [['inventory']], successMessage: t('inventory.entrySaved'), onSuccess: onDone });
@@ -131,9 +125,6 @@ export default function InventoryOperationScreen() {
               placeholder={t('inventory.selectSourceWarehouse')}
               error={errors.source}
             />
-            {availableInSource !== null && material ? (
-              <Banner tone="info" message={`${t('inventory.availableInSource')}: ${formatNumber(availableInSource, locale)} ${material.unit}`} />
-            ) : null}
             <SelectField
               label={t('inventory.destinationWarehouse')}
               required
