@@ -38,6 +38,7 @@ export default function InventoryOperationScreen() {
   const entry = useApiMutation({ mutationFn: inventoryApi.entry, invalidate: [['inventory']], successMessage: t('inventory.entrySaved'), onSuccess: onDone });
   const transfer = useApiMutation({ mutationFn: inventoryApi.transfer, invalidate: [['inventory']], successMessage: t('inventory.transferSaved'), onSuccess: onDone });
 
+  const selectedMaterial = (materials.data ?? []).find((m) => m.id === materialId);
   const materialOptions: Option[] = (materials.data ?? []).map((m) => ({ value: m.id, label: m.name, description: m.unit }));
   const warehouseOptions: Option[] = (warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name, description: w.location ?? undefined }));
 
@@ -137,7 +138,7 @@ export default function InventoryOperationScreen() {
           </>
         )}
         <AppInput
-          label={`${t('inventory.quantity')}${material ? ` (${material.unit})` : ''}`}
+          label={`${t('inventory.quantity')}${selectedMaterial ? ` (${selectedMaterial.unit})` : ''}`}
           required
           value={quantity}
           onChangeText={setQuantity}
