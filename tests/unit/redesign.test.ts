@@ -1,5 +1,5 @@
 import type { Project } from '@/api/types';
-import { OVER_BUDGET_THRESHOLD, overBudgetProjects } from '@/features/dashboard/widgets';
+import { overBudgetProjects } from '@/features/dashboard/widgets';
 import { mobileMessages } from '@/i18n/mobile-messages';
 import { translate } from '@/i18n/translate';
 import { formatDate, formatDateTime } from '@/lib/format';
@@ -17,17 +17,16 @@ describe('dates follow the backlog format dd/mm/yyyy', () => {
   });
 });
 
-describe('admin dashboard: over-budget projects (backlog: > 5 %)', () => {
-  it('keeps only projects whose actual cost exceeds the budget by more than 5 %, worst first', () => {
+describe('admin dashboard: over-budget projects', () => {
+  it('shows every project with any budget overrun, worst first', () => {
     const rows = overBudgetProjects([
       project('ok', '100', '100'),
-      project('limit', '100', '105'),
+      project('limit', '100', '101'),
       project('over10', '100', '110'),
       project('over50', '100', '150'),
       project('noBudget', '0', '50'),
     ]);
-    expect(OVER_BUDGET_THRESHOLD).toBe(0.05);
-    expect(rows.map((r) => r.id)).toEqual(['over50', 'over10']);
+    expect(rows.map((r) => r.id)).toEqual(['over50', 'over10', 'limit']);
   });
 });
 
