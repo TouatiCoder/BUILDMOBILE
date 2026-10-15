@@ -21,6 +21,8 @@ import {
 import { usePermissions } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { aggregateStock } from '@/lib/inventory';
+import { stockState } from '@/lib/labels';
 import { colors, spacing } from '@/theme/tokens';
 
 /**
@@ -49,16 +51,9 @@ export default function DashboardScreen() {
     refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
   });
-  const critical = useQuery({
-    queryKey: ['inventory', 'materials', { criticalStock: true }],
-    queryFn: () => inventoryApi.materials({ criticalStock: true }),
-    enabled: isAdmin || isManager,
-    refetchInterval: isFocused ? 1_000 : false,
-    refetchIntervalInBackground: false,
-  });
-  const low = useQuery({
-    queryKey: ['inventory', 'materials', { lowStock: true }],
-    queryFn: () => inventoryApi.materials({ lowStock: true }),
+  const dashboardMaterials = useQuery({
+    queryKey: ['inventory', 'materials', 'dashboard-alerts'],
+    queryFn: () => inventoryApi.materials({}),
     enabled: isAdmin || isManager,
     refetchInterval: isFocused ? 1_000 : false,
     refetchIntervalInBackground: false,
@@ -84,8 +79,7 @@ export default function DashboardScreen() {
       void projects.refetch();
       if (isAdmin || isManager) {
         void invStats.refetch();
-        void critical.refetch();
-        void low.refetch();
+        void dashboardMaterials.refetch();
         void orders.refetch();
       }
       if (isManager) void movements.refetch();
@@ -94,17 +88,23 @@ export default function DashboardScreen() {
         void checklists.refetch();
       }
       if (businessRole) void notifications.refetch();
-    }, [isAdmin, isManager, isFieldRole, businessRole, projects, invStats, critical, low, orders, movements, calculations, checklists, notifications]),
+    }, [isAdmin, isManager, isFieldRole, businessRole, projects, invStats, dashboardMaterials, orders, movements, calculations, checklists, notifications]),
   );
 
-  const stockAlerts = useMemo(() => [...(critical.data ?? []), ...(low.data ?? [])], [critical.data, low.data]);
+  const stockAlerts = useMemo(() => {
+    return (dashboardMaterials.data ?? []).filter((material) => {
+      const stock = aggregateStock(material.inventory);
+      const state = stockState(stock.quantity, stock.minThreshold, stock.maxThreshold);
+      return state === 'critical' || state === 'low';
+    });
+  }, [dashboardMaterials.data]);
   const unread = (notifications.data ?? []).filter((n) => !n.isRead).length;
   const stats = projects.data?.stats;
   const allProjects = projects.data?.projects ?? [];
   const activeProjects = allProjects.filter((p) => p.status === 'active' || p.status === 'in_progress');
 
   const refetchAll = () => {
-    for (const q of [projects, invStats, critical, low, orders, movements, calculations, checklists, notifications]) void q.refetch();
+    for (const q of [projects, invStats, dashboardMaterials, orders, movements, calculations, checklists, notifications]) void q.refetch();
   };
 
   const viewName = isAdmin ? t('dashboard.adminView') : isManager ? t('dashboard.managerView') : isEngineer ? t('dashboard.engineerView') : undefined;
@@ -162,7 +162,7 @@ export default function DashboardScreen() {
             />
           </StatGrid>
           <OverBudgetSection projects={allProjects} loading={projects.isLoading} />
-          <StockAlertsSection materials={stockAlerts} loading={critical.isLoading || low.isLoading} />
+          <StockAlertsSection materials={stockAlerts} loading={dashboardMaterials.isLoading} />
           <View>
             <SectionHeader title={t('dashboard.quickAccess')} />
             <ListGroup>
