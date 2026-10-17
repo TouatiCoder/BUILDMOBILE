@@ -88,6 +88,8 @@ export const ROUTE_FEATURES: Record<string, Feature> = {
   'orders/new': 'orders.create',
   'orders/[id]': 'costs',
   suppliers: 'suppliers',
+  'suppliers/new': 'suppliers',
+  'suppliers/[id]/edit': 'suppliers',
   reports: 'reports',
   notifications: 'notifications',
   'settings/company': 'company',
