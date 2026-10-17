@@ -74,7 +74,7 @@ export default function CostsScreen() {
         data={orders.data ?? []}
         keyExtractor={(o) => o.id}
         ListHeaderComponent={header}
-        refreshing={orders.isRefetching}
+        refreshing={false}
         onRefresh={() => {
           void orders.refetch();
           void all.refetch();
