@@ -4,10 +4,10 @@ import { useMemo, useState } from 'react';
 import { FlatList, Linking, View } from 'react-native';
 
 import { suppliersApi } from '@/api/endpoints';
-import { Banner, EmptyState, ErrorState, ListSkeleton } from '@/components/feedback';
+import { EmptyState, ErrorState, ListSkeleton } from '@/components/feedback';
 import { SearchInput } from '@/components/fields';
 import { ListRow } from '@/components/layout';
-import { AppButton, IconButton } from '@/components/primitives';
+import { IconButton } from '@/components/primitives';
 import { useApiMutation, useConfirm } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { colors, spacing } from '@/theme/tokens';
@@ -51,8 +51,6 @@ export default function SuppliersScreen() {
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListHeaderComponent={
           <View style={{ padding: spacing.lg, gap: spacing.md }}>
-            <Banner tone="info" message={t('suppliers.readOnly')} />
-            <AppButton title={t('suppliers.add')} icon="add" onPress={() => router.push('/suppliers/new')} />
             <SearchInput value={search} onChangeText={setSearch} placeholder={t('costs.supplierSearchPlaceholder')} />
           </View>
         }
