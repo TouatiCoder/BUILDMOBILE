@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
+import { View } from 'react-native';
 
 import { usePermissions } from '@/hooks/common';
 
 import { useDirectionStyle, useI18n } from '@/i18n/I18nProvider';
 import { ROUTE_FEATURES, type Feature } from '@/lib/access';
 import { colors } from '@/theme/tokens';
+import { GlobalBottomNav } from '@/components/layout/GlobalBottomNav';
 
 /** Route names grouped by the feature that unlocks them (lib/access.ts). */
 const ROUTES_BY_FEATURE = Object.entries(ROUTE_FEATURES).reduce<Partial<Record<Feature, string[]>>>((acc, [route, feature]) => {
@@ -17,6 +19,7 @@ export default function AppLayout() {
   const direction = useDirectionStyle();
   const { allows } = usePermissions();
   return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
     <Stack
       screenOptions={{
         headerTintColor: colors.brand,
@@ -36,5 +39,7 @@ export default function AppLayout() {
         </Stack.Protected>
       ))}
     </Stack>
+    <GlobalBottomNav />
+    </View>
   );
 }
