@@ -53,7 +53,7 @@ export default function MovementsScreen() {
         <FlatList
           data={q.data ?? []}
           keyExtractor={(m) => m.id}
-          refreshing={q.isRefetching}
+          refreshing={false}
           onRefresh={() => q.refetch()}
           renderItem={({ item: m }) => {
             const user = m.user ? fullName({ firstName: m.user.firstName ?? m.user.first_name, lastName: m.user.lastName ?? m.user.last_name }) : '';
