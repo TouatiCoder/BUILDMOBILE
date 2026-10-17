@@ -183,8 +183,19 @@ export const warehousesApi = {
   remove: (id: string) => api.delete<{ success: true }>(`/api/warehouses/${id}`),
 };
 
+export type SupplierInput = {
+  name: string;
+  contactPerson?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+};
+
 export const suppliersApi = {
   list: () => api.get<Supplier[]>('/api/suppliers'),
+  create: (input: SupplierInput) => api.post<Supplier>('/api/suppliers', input),
+  update: (id: string, input: SupplierInput) => api.patch<Supplier>(`/api/suppliers/${id}`, input),
+  remove: (id: string) => api.delete<{ success: true }>(`/api/suppliers/${id}`),
 };
 
 export const ordersApi = {
