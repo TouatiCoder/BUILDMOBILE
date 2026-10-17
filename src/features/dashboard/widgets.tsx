@@ -16,9 +16,6 @@ import {
   orderStatusTone,
   projectStatusLabel,
   projectStatusTone,
-  stockState,
-  stockStateLabel,
-  stockStateTone,
 } from '@/lib/labels';
 import { colors, radius, spacing, type Tone } from '@/theme/tokens';
 
