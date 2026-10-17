@@ -137,7 +137,7 @@ export default function InventoryScreen() {
       keyExtractor={(m) => m.id}
       ListHeaderComponent={header}
       renderItem={({ item }) => <MaterialRow material={item} />}
-      refreshing={materials.isRefetching}
+      refreshing={false}
       onRefresh={() => {
         void materials.refetch();
         void stats.refetch();
