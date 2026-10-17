@@ -68,7 +68,7 @@ export default function ProjectsScreen() {
           onEndReached={() => {
             if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
           }}
-          refreshing={query.isRefetching && !query.isFetchingNextPage}
+          refreshing={false}
           onRefresh={() => query.refetch()}
           ListFooterComponent={query.isFetchingNextPage ? <ActivityIndicator color={colors.brand} style={{ margin: spacing.lg }} /> : null}
           ListEmptyComponent={
