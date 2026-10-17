@@ -32,7 +32,7 @@ export default function NotificationsScreen() {
         <FlatList
           data={q.data ?? []}
           keyExtractor={(n) => n.id}
-          refreshing={q.isRefetching}
+          refreshing={false}
           onRefresh={() => q.refetch()}
           ListHeaderComponent={
             unread > 0 ? (
