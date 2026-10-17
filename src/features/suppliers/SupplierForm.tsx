@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import type { Supplier, SupplierInput } from '@/api/endpoints';
+import type { SupplierInput } from '@/api/endpoints';
+import type { Supplier } from '@/api/types';
 import { AppButton, AppText } from '@/components/primitives';
 import { AppInput } from '@/components/fields';
 import { Screen } from '@/components/layout';
