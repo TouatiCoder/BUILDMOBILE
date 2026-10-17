@@ -46,7 +46,7 @@ export default function SuppliersScreen() {
       <FlatList
         data={items}
         keyExtractor={(s) => s.id}
-        refreshing={q.isRefetching}
+        refreshing={false}
         onRefresh={() => q.refetch()}
         contentContainerStyle={{ paddingBottom: spacing.xl }}
         ListHeaderComponent={
