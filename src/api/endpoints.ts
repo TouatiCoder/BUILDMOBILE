@@ -193,6 +193,7 @@ export type SupplierInput = {
 
 export const suppliersApi = {
   list: () => api.get<Supplier[]>('/api/suppliers'),
+  get: (id: string) => api.get<Supplier>(`/api/suppliers/${id}`),
   create: (input: SupplierInput) => api.post<Supplier>('/api/suppliers', input),
   update: (id: string, input: SupplierInput) => api.patch<Supplier>(`/api/suppliers/${id}`, input),
   remove: (id: string) => api.delete<{ success: true }>(`/api/suppliers/${id}`),
