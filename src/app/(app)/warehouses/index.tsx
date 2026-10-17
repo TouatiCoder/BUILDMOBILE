@@ -37,7 +37,7 @@ export default function WarehousesScreen() {
         <FlatList
           data={q.data ?? []}
           keyExtractor={(w) => w.id}
-          refreshing={q.isRefetching}
+          refreshing={false}
           onRefresh={() => q.refetch()}
           renderItem={({ item: w }) => {
             const capacity = toNumberOrNull(w.capacity);
