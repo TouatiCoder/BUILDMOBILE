@@ -3,7 +3,7 @@ import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 
 import { ordersApi, suppliersApi } from '@/api/endpoints';
-import { Banner, ErrorState } from '@/components/feedback';
+import { ErrorState } from '@/components/feedback';
 import { DateField, SelectField } from '@/components/fields';
 import { Screen } from '@/components/layout';
 import { AppButton, AppCard } from '@/components/primitives';
@@ -44,7 +44,6 @@ export default function NewOrderScreen() {
   return (
     <Screen footer={<AppButton title={t('costs.createOrderButton')} onPress={submit} loading={create.isPending} />}>
       <Stack.Screen options={{ title: t('costs.newOrderTitle') }} />
-      <Banner tone="warning" message={t('orders.createHeaderOnly')} />
       {suppliers.isError ? <ErrorState error={suppliers.error} onRetry={() => suppliers.refetch()} /> : null}
       <AppCard style={{ gap: spacing.lg }}>
         <SelectField
