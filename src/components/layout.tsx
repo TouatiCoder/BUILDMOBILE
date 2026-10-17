@@ -53,7 +53,7 @@ export function Screen({
       avoidKeyboard={!footer}
       contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + (footer ? 0 : insets.bottom) }, contentStyle]}
       refreshControl={
-        onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.brand} colors={[colors.brand]} /> : undefined
+        onRefresh ? <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.brand} colors={[colors.brand]} /> : undefined
       }>
       <View style={styles.column}>{children}</View>
     </KeyboardAwareScrollView>
