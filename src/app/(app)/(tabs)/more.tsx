@@ -37,6 +37,7 @@ export default function AccountScreen() {
       entries: [
         { icon: 'business-outline', label: t('settings.companyInfoTitle'), href: '/settings/company', show: allows('company') },
         { icon: 'people-outline', label: t('dashboard.manageUsers'), href: '/settings/users', show: allows('users') },
+        { icon: 'storefront-outline', label: t('common.suppliers'), href: '/suppliers', show: allows('suppliers') },
         { icon: 'card-outline', label: t('subscription.title'), href: '/settings/subscription', show: allows('subscription') },
       ],
     },
@@ -47,7 +48,6 @@ export default function AccountScreen() {
         { icon: 'bar-chart-outline', label: t('common.reports'), href: '/reports', show: allows('reports') },
         { icon: 'calculator-outline', label: t('common.calculationHubTitle'), href: '/tools', show: allows('tools') },
         { icon: 'checkbox-outline', label: t('common.checklistsPageTitle'), href: '/checklists', show: allows('checklists') },
-        { icon: 'storefront-outline', label: t('common.suppliers'), href: '/suppliers', show: allows('suppliers') },
       ],
     },
     {
