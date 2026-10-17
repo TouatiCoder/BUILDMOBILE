@@ -54,7 +54,7 @@ export default function ChecklistsScreen() {
         <FlatList
           data={q.data?.items ?? []}
           keyExtractor={(c) => c.id}
-          refreshing={q.isRefetching}
+          refreshing={false}
           onRefresh={() => q.refetch()}
           ListHeaderComponent={
             <View style={{ padding: spacing.lg, gap: spacing.sm }}>
