@@ -121,13 +121,11 @@ export function OverBudgetSection({ projects, loading }: { projects: Project[]; 
           {rows.map(({ project, overrunPct }) => (
             <ListRow
               key={project.id}
-              icon={overrunPct !== null ? "trending-up-outline" : "briefcase-outline"}
-              iconTone={overrunPct !== null ? "danger" : "info"}
+              icon="trending-up-outline"
+              iconTone="danger"
               title={project.name}
               subtitle={`${formatCurrency(toNumber(project.currentCost), locale)} / ${formatCurrency(toNumber(project.totalBudget), locale)}`}
-              right={overrunPct !== null
-                ? <StatusBadge label={`+${Math.round(overrunPct * 100)}%`} tone="danger" />
-                : <StatusBadge label={projectStatusLabel(t, project.status)} tone={projectStatusTone(project.status)} />}
+              right={<StatusBadge label={`+${Math.round(overrunPct * 100)}%`} tone="danger" />}
               onPress={() => router.push({ pathname: '/projects/[id]', params: { id: project.id } })}
             />
           ))}
