@@ -110,7 +110,7 @@ export default function DashboardScreen() {
   const viewName = isAdmin ? t('dashboard.adminView') : isManager ? t('dashboard.managerView') : isEngineer ? t('dashboard.engineerView') : undefined;
 
   return (
-    <Screen refreshing={projects.isRefetching} onRefresh={refetchAll} contentStyle={{ paddingTop: insets.top + spacing.md }}>
+    <Screen refreshing={false} onRefresh={refetchAll} contentStyle={{ paddingTop: insets.top + spacing.md }}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <AppHeader
