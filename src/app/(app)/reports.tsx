@@ -32,7 +32,7 @@ export default function ReportsScreen() {
 
   return (
     <Screen
-      refreshing={budget.isRefetching || summary.isRefetching}
+      refreshing={false}
       onRefresh={() => {
         void budget.refetch();
         void summary.refetch();
