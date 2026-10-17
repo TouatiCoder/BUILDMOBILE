@@ -265,8 +265,9 @@ export function ProjectsSection({ projects, loading, title }: { projects: Projec
 }
 
 const styles = StyleSheet.create({
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
-  okRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
+  okRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minWidth: 0 },
+  emptyNotice: { paddingVertical: spacing.md, paddingHorizontal: spacing.md },
   actions: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -spacing.xs },
   actionCell: { width: '50%', padding: spacing.xs },
   action: {
