@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import type { Supplier, SupplierInput } from '@/api/endpoints';
-import { AppButton } from '@/components/primitives';
+import { AppButton, AppText } from '@/components/primitives';
 import { AppInput } from '@/components/fields';
 import { Screen } from '@/components/layout';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -33,7 +33,7 @@ export function SupplierForm({
         <AppInput label={t('suppliers.email')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
         <AppInput label={t('suppliers.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
         <AppInput label={t('suppliers.address')} value={address} onChangeText={setAddress} multiline numberOfLines={3} />
-        {error ? <AppInput label={t('common.error')} value={error} editable={false} /> : null}
+        {error ? <AppText color={undefined} accessibilityRole="alert" style={{ color: '#DC2626' }}>{error}</AppText> : null}
         <AppButton
           title={supplier ? t('suppliers.saveChanges') : t('suppliers.create')}
           icon="save-outline"
