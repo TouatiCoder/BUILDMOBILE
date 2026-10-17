@@ -99,18 +99,15 @@ function Section({
   );
 }
 
+/** Shows the three most recently updated projects. Budget is intentionally not checked here. */
 export function OverBudgetSection({ projects, loading }: { projects: Project[]; loading: boolean }) {
-  const { t, locale } = useI18n();
-  const alerts = overBudgetProjects(projects).slice(0, 3);
-  const rows = alerts.length > 0
-    ? alerts.map((project) => ({ project, overrunPct: project.overrunPct }))
-    : [...projects]
-        .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? '')))
-        .slice(0, 3)
-        .map((project) => ({ project, overrunPct: null as number | null }));
+  const { t } = useI18n();
+  const rows = [...projects]
+    .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? '')))
+    .slice(0, 3);
   return (
     <Section
-      title={t(alerts.length > 0 ? 'dashboard.overBudgetProjects' : 'dashboard.recentProjects')}
+      title={t('dashboard.recentProjects')}
       loading={loading}
       actionLabel={t('common.viewAll')}
       onAction={() => router.push('/projects')}>
@@ -125,16 +122,14 @@ export function OverBudgetSection({ projects, loading }: { projects: Project[]; 
         </AppCard>
       ) : (
         <ListGroup>
-          {rows.map(({ project, overrunPct }) => (
+          {rows.map((project) => (
             <ListRow
               key={project.id}
-              icon={overrunPct !== null ? 'trending-up-outline' : 'briefcase-outline'}
-              iconTone={overrunPct !== null ? 'danger' : 'info'}
+              icon="briefcase-outline"
+              iconTone="info"
               title={project.name}
-              subtitle={`${formatCurrency(toNumber(project.currentCost), locale)} / ${formatCurrency(toNumber(project.totalBudget), locale)}`}
-              right={overrunPct !== null
-                ? <StatusBadge label={`+${Math.round(overrunPct * 100)}%`} tone="danger" />
-                : <StatusBadge label={projectStatusLabel(t, project.status)} tone={projectStatusTone(project.status)} />}
+              subtitle={[project.clientName, project.city].filter(Boolean).join(' · ') || undefined}
+              right={<StatusBadge label={projectStatusLabel(t, project.status)} tone={projectStatusTone(project.status)} />}
               onPress={() => router.push({ pathname: '/projects/[id]', params: { id: project.id } })}
             />
           ))}
@@ -144,48 +139,39 @@ export function OverBudgetSection({ projects, loading }: { projects: Project[]; 
   );
 }
 
-export function StockAlertsSection({ materials, loading, limit = 3 }: { materials: InventoryMaterial[]; loading: boolean; limit?: number }) {
+/** Shows the three most recently updated inventory materials, regardless of stock thresholds. */
+export function StockAlertsSection({ materials, loading }: { materials: InventoryMaterial[]; loading: boolean; limit?: number }) {
   const { t, locale } = useI18n();
-  const alerts = materials.filter((material) => {
-    const stock = aggregateStock(material.inventory);
-    const state = stockState(stock.quantity, stock.minThreshold, stock.maxThreshold);
-    return state === 'critical' || state === 'low';
-  });
-  const showingAlerts = alerts.length > 0;
-  const rows = (showingAlerts ? alerts : [...materials]
-    .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? ''))))
-    .slice(0, limit);
+  const rows = [...materials]
+    .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? '')))
+    .slice(0, 3);
   return (
     <Section
-      title={t(showingAlerts ? 'dashboard.lowStockMaterials' : 'dashboard.inventoryPreview')}
+      title={t('dashboard.inventoryPreview')}
       loading={loading}
       actionLabel={t('common.viewAll')}
       onAction={() => router.push('/inventory')}>
       {rows.length === 0 ? (
         <AppCard>
           <View style={styles.okRow}>
-            <IconTile icon="shield-checkmark-outline" tone="success" size={36} />
+            <IconTile icon="cube-outline" tone="info" size={36} />
             <AppText variant="small" style={{ flex: 1 }}>
-              {t('dashboard.stockHealthy')}
+              {t('inventory.noMaterialsFound')}
             </AppText>
           </View>
         </AppCard>
       ) : (
         <ListGroup>
-          {rows.map((m) => {
-            const s = aggregateStock(m.inventory);
-            const state = stockState(s.quantity, s.minThreshold, s.maxThreshold);
+          {rows.map((material) => {
+            const stock = aggregateStock(material.inventory);
             return (
               <ListRow
-                key={m.id}
+                key={material.id}
                 icon="cube-outline"
-                iconTone={showingAlerts ? stockStateTone(state) : 'info'}
-                title={m.name}
-                subtitle={`${t('common.stockLabel')}: ${formatNumber(s.quantity, locale)} ${m.unit} · ${t('common.minLabel')}: ${formatNumber(s.minThreshold, locale)}`}
-                right={showingAlerts
-                  ? <StatusBadge label={stockStateLabel(t, state)} tone={stockStateTone(state)} />
-                  : undefined}
-                onPress={() => router.push({ pathname: '/materials/[id]', params: { id: m.id } })}
+                iconTone="info"
+                title={material.name}
+                subtitle={`${t('common.stockLabel')}: ${formatNumber(stock.quantity, locale)} ${material.unit}`}
+                onPress={() => router.push({ pathname: '/materials/[id]', params: { id: material.id } })}
               />
             );
           })}
