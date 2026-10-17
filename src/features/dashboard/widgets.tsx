@@ -102,17 +102,24 @@ function Section({
 export function OverBudgetSection({ projects, loading }: { projects: Project[]; loading: boolean }) {
   const { t, locale } = useI18n();
   const alerts = overBudgetProjects(projects).slice(0, 3);
-  // This section is specifically for budget overruns. Never place ordinary
-  // recent projects here: doing so makes the empty state misleading.
-  const rows = alerts.map((project) => ({ project, overrunPct: project.overrunPct }));
+  const rows = alerts.length > 0
+    ? alerts.map((project) => ({ project, overrunPct: project.overrunPct }))
+    : [...projects]
+        .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? '')))
+        .slice(0, 3)
+        .map((project) => ({ project, overrunPct: null as number | null }));
   return (
-    <Section title={t('dashboard.overBudgetProjects')} loading={loading} actionLabel={t('common.viewAll')} onAction={() => router.push('/projects')}>
+    <Section
+      title={t(alerts.length > 0 ? 'dashboard.overBudgetProjects' : 'dashboard.recentProjects')}
+      loading={loading}
+      actionLabel={t('common.viewAll')}
+      onAction={() => router.push('/projects')}>
       {rows.length === 0 ? (
         <AppCard style={styles.emptyNotice}>
           <View style={styles.okRow}>
-            <IconTile icon="checkmark-circle-outline" tone="success" size={36} />
+            <IconTile icon="briefcase-outline" tone="info" size={36} />
             <AppText variant="small" style={{ flex: 1 }}>
-              {t('dashboard.noOverBudget')}
+              {t('project.noProjectFound')}
             </AppText>
           </View>
         </AppCard>
@@ -121,11 +128,13 @@ export function OverBudgetSection({ projects, loading }: { projects: Project[]; 
           {rows.map(({ project, overrunPct }) => (
             <ListRow
               key={project.id}
-              icon="trending-up-outline"
-              iconTone="danger"
+              icon={overrunPct !== null ? 'trending-up-outline' : 'briefcase-outline'}
+              iconTone={overrunPct !== null ? 'danger' : 'info'}
               title={project.name}
               subtitle={`${formatCurrency(toNumber(project.currentCost), locale)} / ${formatCurrency(toNumber(project.totalBudget), locale)}`}
-              right={<StatusBadge label={`+${Math.round(overrunPct * 100)}%`} tone="danger" />}
+              right={overrunPct !== null
+                ? <StatusBadge label={`+${Math.round(overrunPct * 100)}%`} tone="danger" />
+                : <StatusBadge label={projectStatusLabel(t, project.status)} tone={projectStatusTone(project.status)} />}
               onPress={() => router.push({ pathname: '/projects/[id]', params: { id: project.id } })}
             />
           ))}
@@ -137,9 +146,21 @@ export function OverBudgetSection({ projects, loading }: { projects: Project[]; 
 
 export function StockAlertsSection({ materials, loading, limit = 3 }: { materials: InventoryMaterial[]; loading: boolean; limit?: number }) {
   const { t, locale } = useI18n();
-  const rows = materials.slice(0, limit);
+  const alerts = materials.filter((material) => {
+    const stock = aggregateStock(material.inventory);
+    const state = stockState(stock.quantity, stock.minThreshold, stock.maxThreshold);
+    return state === 'critical' || state === 'low';
+  });
+  const showingAlerts = alerts.length > 0;
+  const rows = (showingAlerts ? alerts : [...materials]
+    .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? '').localeCompare(String(a.updatedAt ?? a.createdAt ?? ''))))
+    .slice(0, limit);
   return (
-    <Section title={t('dashboard.lowStockMaterials')} loading={loading} actionLabel={t('common.viewAll')} onAction={() => router.push('/inventory')}>
+    <Section
+      title={t(showingAlerts ? 'dashboard.lowStockMaterials' : 'dashboard.inventoryPreview')}
+      loading={loading}
+      actionLabel={t('common.viewAll')}
+      onAction={() => router.push('/inventory')}>
       {rows.length === 0 ? (
         <AppCard>
           <View style={styles.okRow}>
@@ -158,10 +179,12 @@ export function StockAlertsSection({ materials, loading, limit = 3 }: { material
               <ListRow
                 key={m.id}
                 icon="cube-outline"
-                iconTone={stockStateTone(state)}
+                iconTone={showingAlerts ? stockStateTone(state) : 'info'}
                 title={m.name}
                 subtitle={`${t('common.stockLabel')}: ${formatNumber(s.quantity, locale)} ${m.unit} · ${t('common.minLabel')}: ${formatNumber(s.minThreshold, locale)}`}
-                right={<StatusBadge label={stockStateLabel(t, state)} tone={stockStateTone(state)} />}
+                right={showingAlerts
+                  ? <StatusBadge label={stockStateLabel(t, state)} tone={stockStateTone(state)} />
+                  : undefined}
                 onPress={() => router.push({ pathname: '/materials/[id]', params: { id: m.id } })}
               />
             );
