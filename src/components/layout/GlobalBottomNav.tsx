@@ -33,7 +33,7 @@ export function GlobalBottomNav() {
       icon: 'grid-outline',
       href: '/(app)/(tabs)',
       visible: true,
-      matches: (path) => path === '/' || path.endsWith('/index') || path.includes('(tabs)'),
+      matches: (path) => path === '/' || path === '/index' || path.endsWith('/(tabs)'),
     },
     {
       key: 'inventory',
