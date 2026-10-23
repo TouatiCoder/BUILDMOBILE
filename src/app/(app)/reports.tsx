@@ -81,7 +81,7 @@ export default function ReportsScreen() {
                           <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: colors.brand }} />
                           <AppText variant="caption" style={{ width: 70 }}>{t('reports.csvBudget')}</AppText>
                           <View style={{ flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.border, overflow: 'hidden' }}>
-                            <View style={{ width: String(budgetPct) + '%', height: '100%', backgroundColor: colors.brand }} />
+                            <View style={{ width: (String(budgetPct) + '%') as `${number}%`, height: '100%', backgroundColor: colors.brand }} />
                           </View>
                         </View>
                         <AppText variant="caption">{formatCurrency(row.budget, locale)}</AppText>
@@ -89,7 +89,7 @@ export default function ReportsScreen() {
                           <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: colors.danger }} />
                           <AppText variant="caption" style={{ width: 70 }}>{t('reports.csvActual')}</AppText>
                           <View style={{ flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.border, overflow: 'hidden' }}>
-                            <View style={{ width: String(actualPct) + '%', height: '100%', backgroundColor: colors.danger }} />
+                            <View style={{ width: (String(actualPct) + '%') as `${number}%`, height: '100%', backgroundColor: colors.danger }} />
                           </View>
                         </View>
                         <AppText variant="caption">{formatCurrency(row.actual, locale)}</AppText>
@@ -118,7 +118,7 @@ export default function ReportsScreen() {
                   <AppText variant="bodyStrong">{row.project_name}</AppText>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                     <View style={{ flex: 1, height: 12, backgroundColor: colors.border, borderRadius: 6, overflow: 'hidden' }}>
-                      <View style={{ width: String(widthPct) + '%', height: '100%', backgroundColor: positive ? colors.success : colors.danger, borderRadius: 6 }} />
+                      <View style={{ width: (String(widthPct) + '%') as `${number}%`, height: '100%', backgroundColor: positive ? colors.success : colors.danger, borderRadius: 6 }} />
                     </View>
                     <AppText variant="caption" color={positive ? colors.success : colors.danger}>{formatCurrency(row.variance, locale)}</AppText>
                   </View>
