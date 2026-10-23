@@ -182,7 +182,7 @@ export function ProjectForm({
               allowClear
               searchable
               disabled={users.isLoading}
-              hint={users.isError ? t('common.loadError') : undefined}
+              hint={users.isError ? t('common.retry') : undefined}
             />
           )}
         />
