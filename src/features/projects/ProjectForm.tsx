@@ -1,8 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
 import { z } from 'zod';
 
+import { usersApi } from '@/api/endpoints';
 import type { Project, ProjectInput } from '@/api/types';
 import { DateField, SelectField, AppInput, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
@@ -29,6 +31,8 @@ type Values = {
   startDate: string | null;
   endDate: string | null;
   description: string;
+  siteManagerId: string;
+  structuralEngineerId: string;
 };
 
 function initialValues(project?: Project): Values {
@@ -49,6 +53,8 @@ function initialValues(project?: Project): Values {
     startDate: project?.startDate ? project.startDate.slice(0, 10) : null,
     endDate: project?.endDate ? project.endDate.slice(0, 10) : null,
     description: project?.description ?? '',
+    siteManagerId: project?.siteManagerId ?? '',
+    structuralEngineerId: project?.structuralEngineerId ?? '',
   };
 }
 
@@ -69,6 +75,10 @@ export function ProjectForm({
   onSubmit: (input: ProjectInput) => void;
 }) {
   const { t } = useI18n();
+  const users = useQuery({ queryKey: ['users', 'project-team-options'], queryFn: () => usersApi.list({ limit: 100 }) });
+  const teamOptions: Option[] = (users.data?.users ?? [])
+    .filter((user) => user.active)
+    .map((user) => ({ value: user.id, label: user.fullName?.trim() || `${user.firstName} ${user.lastName}`.trim() || user.email }));
 
   const schema = z
     .object({
@@ -117,6 +127,8 @@ export function ProjectForm({
       startDate: v.startDate,
       endDate: v.endDate,
       description: orNull(v.description),
+      siteManagerId: orNull(v.siteManagerId),
+      structuralEngineerId: orNull(v.structuralEngineerId),
     });
   });
 
@@ -151,6 +163,44 @@ export function ProjectForm({
           name="status"
           render={({ field }) => (
             <SelectField label={project ? t('project.status') : t('project.initialStatus')} value={field.value} options={statusOptions} onChange={(v) => field.onChange(v ?? 'planning')} />
+          )}
+        />
+      </AppCard>
+
+      <AppCard style={{ gap: spacing.lg }}>
+        <SectionHeader title={t('project.projectTeam')} />
+        <Controller
+          control={control}
+          name="siteManagerId"
+          render={({ field }) => (
+            <SelectField
+              label={t('project.siteManager')}
+              value={field.value || null}
+              options={teamOptions}
+              onChange={(value) => field.onChange(value ?? '')}
+              placeholder={t('project.notDefined')}
+              allowClear
+              searchable
+              disabled={users.isLoading}
+              hint={users.isError ? t('common.loadError') : undefined}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="structuralEngineerId"
+          render={({ field }) => (
+            <SelectField
+              label={t('project.engineer')}
+              value={field.value || null}
+              options={teamOptions}
+              onChange={(value) => field.onChange(value ?? '')}
+              placeholder={t('project.notDefined')}
+              allowClear
+              searchable
+              disabled={users.isLoading}
+              hint={users.isError ? t('common.loadError') : undefined}
+            />
           )}
         />
       </AppCard>
