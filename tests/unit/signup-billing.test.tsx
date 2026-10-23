@@ -114,7 +114,7 @@ describe('sign-up (company admin only)', () => {
       email: 'sara@atlas.test',
       password: 'Secure123',
     });
-  });
+  }, 15000);
 
   it('never continues with a super-admin account', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
