@@ -56,6 +56,10 @@ export default function CostsScreen() {
           onPress={() => router.push('/suppliers')}
         />
       </StatGrid>
+      <View style={{ gap: spacing.xs }}>
+        <SectionHeader title={t('reports.title')} actionLabel={t('common.viewAll')} onAction={() => router.push('/reports')} />
+        <AppText variant="caption">Budget prévu · dépenses réelles · écart par projet</AppText>
+      </View>
       <SearchInput value={search} onChangeText={setSearch} />
       <ChipGroup options={statusOptions} value={status} onChange={setStatus} />
     </View>
