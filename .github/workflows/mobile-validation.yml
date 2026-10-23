@@ -28,18 +28,8 @@ jobs:
         run: npm ci
       - name: Align dependencies with the installed Expo SDK
         run: npx expo install --fix
-      - name: Commit Expo-compatible dependency versions
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        run: |
-          if ! git diff --quiet -- package.json package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package.json package-lock.json
-            git commit -m "Align Expo dependencies with SDK 57"
-            git push
-          else
-            echo "Expo dependencies already match the SDK."
-          fi
+      - name: Report Expo dependency alignment
+        run: git diff --stat -- package.json package-lock.json
       - name: TypeScript checks
         run: npm run typecheck
       - name: Unit and calculator tests
