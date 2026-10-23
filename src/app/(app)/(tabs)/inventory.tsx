@@ -28,35 +28,59 @@ export default function InventoryScreen() {
   const [category, setCategory] = useState<string | null>(null);
   const debounced = useDebouncedValue(search);
 
-  const stats = useQuery({
-    queryKey: ['inventory', 'stats'],
-    queryFn: inventoryApi.stats,
-    refetchInterval: isFocused ? 1000 : false,
-    refetchIntervalInBackground: false,
-  });
   const filters = useQuery({
     queryKey: ['inventory', 'filters'],
     queryFn: inventoryApi.filters,
     staleTime: 60_000,
   });
+  // Load the complete per-material inventory once and apply search/status filters
+  // locally. This keeps the visible list, badges, and counts consistent even
+  // when an older API deployment returns warehouse-level rather than material-level stats.
   const materials = useQuery({
-    queryKey: ['inventory', 'materials', { search: debounced, filter, category }],
-    queryFn: () =>
-      inventoryApi.materials({
-        search: debounced || undefined,
-        category: category ?? undefined,
-        lowStock: filter === 'low',
-        criticalStock: filter === 'critical',
-      }),
+    queryKey: ['inventory', 'materials', 'all'],
+    queryFn: () => inventoryApi.materials({}),
     refetchInterval: isFocused ? 1000 : false,
     refetchIntervalInBackground: false,
   });
 
+  const filteredMaterials = useMemo(() => {
+    const term = debounced.trim().toLocaleLowerCase();
+    return (materials.data ?? []).filter((material) => {
+      const matchesSearch = !term || [
+        material.name,
+        material.category ?? '',
+        material.supplier?.name ?? '',
+        material.description ?? '',
+      ].some((value) => value.toLocaleLowerCase().includes(term));
+      if (!matchesSearch) return false;
+      if (category && material.category !== category) return false;
+      const stock = aggregateStock(material.inventory);
+      const state = stockState(stock.quantity, stock.minThreshold, stock.maxThreshold);
+      if (filter === 'low' && state !== 'low') return false;
+      if (filter === 'critical' && state !== 'critical') return false;
+      return true;
+    });
+  }, [materials.data, debounced, filter, category]);
+
+  const inventoryStats = useMemo(() => {
+    const rows = materials.data ?? [];
+    let totalValue = 0;
+    let lowStockCount = 0;
+    let criticalStockCount = 0;
+    for (const material of rows) {
+      const stock = aggregateStock(material.inventory);
+      totalValue += stock.quantity * toNumber(material.unitPrice);
+      const state = stockState(stock.quantity, stock.minThreshold, stock.maxThreshold);
+      if (state === 'low') lowStockCount += 1;
+      if (state === 'critical') criticalStockCount += 1;
+    }
+    return { totalMaterials: rows.length, totalValue, lowStockCount, criticalStockCount };
+  }, [materials.data]);
+
   useFocusEffect(
     useCallback(() => {
-      void stats.refetch();
       void materials.refetch();
-    }, [stats, materials]),
+    }, [materials]),
   );
 
   const categoryOptions: Option[] = useMemo(
@@ -74,22 +98,22 @@ export default function InventoryScreen() {
 
   const header = (
     <View style={{ gap: spacing.lg }}>
-      {stats.data ? (
+      {materials.data ? (
         <StatGrid>
-          <StatCard icon="cash-outline" tone="brand" label={t('inventory.statsValue')} value={formatCurrency(stats.data.totalValue, locale)} />
-          <StatCard icon="layers-outline" tone="info" label={t('inventory.statsTotalMaterials')} value={String(stats.data.totalMaterials)} />
+          <StatCard icon="cash-outline" tone="brand" label={t('inventory.statsValue')} value={formatCurrency(inventoryStats.totalValue, locale)} />
+          <StatCard icon="layers-outline" tone="info" label={t('inventory.statsTotalMaterials')} value={String(inventoryStats.totalMaterials)} />
           <StatCard
             icon="trending-down-outline"
-            tone={stats.data.lowStockCount > 0 ? 'warning' : 'success'}
+            tone={inventoryStats.lowStockCount > 0 ? 'warning' : 'success'}
             label={t('inventory.lowStock')}
-            value={String(stats.data.lowStockCount)}
+            value={String(inventoryStats.lowStockCount)}
             onPress={() => setFilter('low')}
           />
           <StatCard
             icon="alert-circle-outline"
-            tone={stats.data.criticalStockCount > 0 ? 'danger' : 'success'}
+            tone={inventoryStats.criticalStockCount > 0 ? 'danger' : 'success'}
             label={t('inventory.outOfStock')}
-            value={String(stats.data.criticalStockCount)}
+            value={String(inventoryStats.criticalStockCount)}
             onPress={() => setFilter('critical')}
           />
         </StatGrid>
@@ -133,14 +157,13 @@ export default function InventoryScreen() {
     <FlatList
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.list}
-      data={materials.data ?? []}
+      data={filteredMaterials}
       keyExtractor={(m) => m.id}
       ListHeaderComponent={header}
       renderItem={({ item }) => <MaterialRow material={item} />}
       refreshing={false}
       onRefresh={() => {
         void materials.refetch();
-        void stats.refetch();
       }}
       ListEmptyComponent={
         materials.isLoading ? (
