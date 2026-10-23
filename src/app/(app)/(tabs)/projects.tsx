@@ -49,7 +49,7 @@ export default function ProjectsScreen() {
         }}
       />
       <View style={styles.filters}>
-        <SearchInput value={search} onChangeText={setSearch} />
+        <SearchInput value={search} onChangeText={setSearch} placeholder="Rechercher par nom du projet ou nom du propriétaire…" />
         <ChipGroup options={statusOptions} value={status} onChange={setStatus} />
       </View>
       {query.isLoading ? (
