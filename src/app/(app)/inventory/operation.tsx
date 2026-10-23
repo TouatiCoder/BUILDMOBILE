@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 
-import { inventoryApi, warehousesApi } from '@/api/endpoints';
+import { inventoryApi, materialsApi, warehousesApi } from '@/api/endpoints';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
 import { ChipGroup, SelectField, AppInput, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
@@ -33,6 +33,11 @@ export default function InventoryOperationScreen() {
 
   const materials = useQuery({ queryKey: ['inventory', 'materials', { all: true }], queryFn: () => inventoryApi.materials({}) });
   const warehouses = useQuery({ queryKey: ['warehouses'], queryFn: warehousesApi.list });
+  const materialDetail = useQuery({
+    queryKey: ['inventory', 'material', materialId],
+    queryFn: () => materialsApi.get(materialId as string),
+    enabled: mode === 'transfer' && Boolean(materialId),
+  });
 
   const onDone = () => router.back();
   const entry = useApiMutation({ mutationFn: inventoryApi.entry, invalidate: [['inventory']], successMessage: t('inventory.entrySaved'), onSuccess: onDone });
@@ -42,12 +47,16 @@ export default function InventoryOperationScreen() {
   const materialOptions: Option[] = (materials.data ?? []).map((m) => ({ value: m.id, label: m.name, description: m.unit }));
   const sourceStockByWarehouse = useMemo(() => {
     const stock = new Map<string, number>();
-    for (const row of selectedMaterial?.inventory ?? []) {
+    // Prefer the material detail endpoint when it exposes a warehouse-specific
+    // inventory row; the list endpoint may return only aggregate stock.
+    const detailRows = materialDetail.data?.inventory ?? [];
+    const rows = detailRows.some((row) => row.warehouseId) ? detailRows : selectedMaterial?.inventory ?? [];
+    for (const row of rows) {
       if (!row.warehouseId) continue;
       stock.set(row.warehouseId, (stock.get(row.warehouseId) ?? 0) + toNumber(row.quantity));
     }
     return stock;
-  }, [selectedMaterial]);
+  }, [materialDetail.data, selectedMaterial]);
   const positiveSourceWarehouses = useMemo(
     () => [...sourceStockByWarehouse.entries()].filter(([, stock]) => stock > 0),
     [sourceStockByWarehouse],
