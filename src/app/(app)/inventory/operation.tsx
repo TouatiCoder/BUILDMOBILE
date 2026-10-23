@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { inventoryApi, warehousesApi } from '@/api/endpoints';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
@@ -9,7 +9,7 @@ import { Screen } from '@/components/layout';
 import { AppButton, AppCard } from '@/components/primitives';
 import { useApiMutation } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
-import { parseDecimalInput } from '@/lib/format';
+import { parseDecimalInput, toNumber } from '@/lib/format';
 import { spacing } from '@/theme/tokens';
 
 type Mode = 'entry' | 'transfer';
@@ -40,7 +40,39 @@ export default function InventoryOperationScreen() {
 
   const selectedMaterial = (materials.data ?? []).find((m) => m.id === materialId);
   const materialOptions: Option[] = (materials.data ?? []).map((m) => ({ value: m.id, label: m.name, description: m.unit }));
-  const warehouseOptions: Option[] = (warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name, description: w.location ?? undefined }));
+  const sourceStockByWarehouse = useMemo(() => {
+    const stock = new Map<string, number>();
+    for (const row of selectedMaterial?.inventory ?? []) {
+      if (!row.warehouseId) continue;
+      stock.set(row.warehouseId, (stock.get(row.warehouseId) ?? 0) + toNumber(row.quantity));
+    }
+    return stock;
+  }, [selectedMaterial]);
+  const positiveSourceWarehouses = useMemo(
+    () => [...sourceStockByWarehouse.entries()].filter(([, stock]) => stock > 0),
+    [sourceStockByWarehouse],
+  );
+  const warehouseOptions: Option[] = (warehouses.data ?? []).map((w) => {
+    const stock = sourceStockByWarehouse.get(w.id);
+    return {
+      value: w.id,
+      label: w.name,
+      description: mode === 'transfer' && stock !== undefined
+        ? `Stock: ${stock} ${selectedMaterial?.unit ?? ''}`.trim()
+        : w.location ?? undefined,
+    };
+  });
+
+  // If the selected material has stock in exactly one known warehouse, select
+  // that warehouse automatically as the transfer source. Never guess when the
+  // API only returns an aggregate quantity or multiple warehouses have stock.
+  useEffect(() => {
+    if (mode !== 'transfer') return;
+    setSourceId(positiveSourceWarehouses.length === 1 ? positiveSourceWarehouses[0][0] : null);
+    setDestinationId((current) => current && positiveSourceWarehouses.length === 1 && current === positiveSourceWarehouses[0][0] ? null : current);
+    setQuantity('');
+    setErrors({});
+  }, [materialId, mode, positiveSourceWarehouses]);
 
   const submit = () => {
     const next: Record<string, string> = {};
@@ -52,6 +84,10 @@ export default function InventoryOperationScreen() {
       if (!sourceId) next.source = t('inventory.sourceWarehouseRequiredError');
       if (!destinationId) next.destination = t('inventory.destinationWarehouseRequiredError');
       if (sourceId && destinationId && sourceId === destinationId) next.destination = t('inventory.destinationWarehouseRequiredError');
+      const sourceStock = sourceId ? sourceStockByWarehouse.get(sourceId) : undefined;
+      if (sourceId && sourceStock !== undefined && qty !== null && qty > sourceStock) {
+        next.quantity = `Stock insuffisant : ${sourceStock} ${selectedMaterial?.unit ?? ''} disponible(s) dans le dépôt source.`.trim();
+      }
     }
     setErrors(next);
     if (Object.keys(next).length > 0 || !materialId || qty === null) return;
@@ -121,8 +157,8 @@ export default function InventoryOperationScreen() {
               label={t('inventory.sourceWarehouse')}
               required
               value={sourceId}
-              options={warehouseOptions}
-              onChange={setSourceId}
+              options={warehouseOptions.filter((w) => sourceStockByWarehouse.get(w.value) === undefined || (sourceStockByWarehouse.get(w.value) ?? 0) > 0)}
+              onChange={(value) => { setSourceId(value); setQuantity(''); setErrors({}); }}
               placeholder={t('inventory.selectSourceWarehouse')}
               error={errors.source}
             />
@@ -131,7 +167,7 @@ export default function InventoryOperationScreen() {
               required
               value={destinationId}
               options={warehouseOptions.filter((w) => w.value !== sourceId)}
-              onChange={setDestinationId}
+              onChange={(value) => { setDestinationId(value); setErrors({}); }}
               placeholder={t('inventory.selectDestinationWarehouse')}
               error={errors.destination}
             />
