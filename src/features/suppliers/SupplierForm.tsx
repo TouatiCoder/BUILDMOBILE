@@ -45,7 +45,7 @@ export function SupplierForm({
               setError(t('suppliers.nameRequired'));
               return;
             }
-            if (email.trim() && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+            if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
               setError(t('suppliers.invalidEmail'));
               return;
             }
