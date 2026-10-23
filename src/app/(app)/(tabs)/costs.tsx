@@ -7,7 +7,7 @@ import { ordersApi, suppliersApi } from '@/api/endpoints';
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/feedback';
 import { ChipGroup, SearchInput, type Option } from '@/components/fields';
 import { ListRow, StatCard, StatGrid } from '@/components/layout';
-import { AppText, StatusBadge, IconButton } from '@/components/primitives';
+import { AppText, StatusBadge, IconButton, SectionHeader } from '@/components/primitives';
 import { usePermissions } from '@/hooks/common';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useI18n } from '@/i18n/I18nProvider';
