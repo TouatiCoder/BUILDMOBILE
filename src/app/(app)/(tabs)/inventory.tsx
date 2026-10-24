@@ -39,7 +39,7 @@ export default function InventoryScreen() {
   const materials = useQuery({
     queryKey: ['inventory', 'materials', 'all'],
     queryFn: () => inventoryApi.materials({}),
-    refetchInterval: isFocused ? 1000 : false,
+    refetchInterval: isFocused ? 30_000 : false,
     refetchIntervalInBackground: false,
   });
 
