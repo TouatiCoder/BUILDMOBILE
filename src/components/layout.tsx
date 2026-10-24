@@ -69,7 +69,7 @@ export function Screen({
       collapsable={false}
       style={[styles.root, direction, footer && keyboardOpen ? { paddingBottom: overlap } : null]}>
       {inner}
-      {footer ? <View style={[styles.footer, { paddingBottom: spacing.md + (keyboardOpen ? 0 : insets.bottom) }]}>{footer}</View> : null}
+      {footer ? <View style={[styles.footer, { paddingBottom: keyboardOpen ? spacing.xs : spacing.sm }]}>{footer}</View> : null}
     </View>
   );
 }
