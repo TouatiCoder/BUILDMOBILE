@@ -758,6 +758,7 @@
     "stockTransfer": "Transfert de stock",
     "warehouseRequiredError": "Le dépôt est obligatoire",
     "sourceWarehouseRequiredError": "Le dépôt source est obligatoire",
+    "sourceStockUnavailableWarning": "Le stock n'est pas détaillé par dépôt dans les données reçues. Vérifiez le dépôt source et la quantité avant de confirmer le transfert."
     "destinationWarehouseRequiredError": "Le dépôt destination est obligatoire",
     "differentWarehouseError": "Choisissez un dépôt de destination différent",
     "destinationWarehouse": "Dépôt destination",
