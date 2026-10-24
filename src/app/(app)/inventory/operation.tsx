@@ -155,7 +155,7 @@ export default function InventoryOperationScreen() {
           />
         ) : (
           <>
-            {selectedMaterial && sourceStockByWarehouse.size === 0 && selectedMaterial.inventory.length > 0 ? (
+            {selectedMaterial && sourceStockByWarehouse.size === 0 ? (
               <AppText variant="small" color="warning">{t('inventory.sourceStockUnavailableWarning')}</AppText>
             ) : null}
             <SelectField
