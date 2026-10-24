@@ -6,7 +6,7 @@ import { inventoryApi, warehousesApi } from '@/api/endpoints';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
 import { ChipGroup, SelectField, AppInput, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
-import { AppButton, AppCard } from '@/components/primitives';
+import { AppButton, AppCard, AppText } from '@/components/primitives';
 import { useApiMutation } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { parseDecimalInput, toNumber } from '@/lib/format';
@@ -155,6 +155,9 @@ export default function InventoryOperationScreen() {
           />
         ) : (
           <>
+            {selectedMaterial && sourceStockByWarehouse.size === 0 && selectedMaterial.inventory.length > 0 ? (
+              <AppText variant="small" color="warning">{t('inventory.sourceStockUnavailableWarning')}</AppText>
+            ) : null}
             <SelectField
               label={t('inventory.sourceWarehouse')}
               required
