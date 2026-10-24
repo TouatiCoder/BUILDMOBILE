@@ -43,9 +43,20 @@ export default function InventoryScreen() {
     refetchIntervalInBackground: false,
   });
 
+  // The inventory API can include repeated material rows on some deployments.
+  // Deduplicate by stable material ID before deriving counts, stock totals, and list rows.
+  const uniqueMaterials = useMemo(() => {
+    const seen = new Set<string>();
+    return (materials.data ?? []).filter((material) => {
+      if (seen.has(material.id)) return false;
+      seen.add(material.id);
+      return true;
+    });
+  }, [uniqueMaterials]);
+
   const filteredMaterials = useMemo(() => {
     const term = debounced.trim().toLocaleLowerCase();
-    return (materials.data ?? []).filter((material) => {
+    return uniqueMaterials.filter((material) => {
       const matchesSearch = !term || [
         material.name,
         material.category ?? '',
@@ -60,10 +71,10 @@ export default function InventoryScreen() {
       if (filter === 'critical' && state !== 'critical') return false;
       return true;
     });
-  }, [materials.data, debounced, filter, category]);
+  }, [uniqueMaterials, debounced, filter, category]);
 
   const inventoryStats = useMemo(() => {
-    const rows = materials.data ?? [];
+    const rows = uniqueMaterials;
     let totalValue = 0;
     let lowStockCount = 0;
     let criticalStockCount = 0;
