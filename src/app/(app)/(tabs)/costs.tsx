@@ -32,14 +32,29 @@ export default function CostsScreen() {
     queryFn: () => ordersApi.list({ search: debounced || undefined, status: status === 'all' ? undefined : status, limit: 100 }),
   });
 
+  // Keep the costs screen focused on orders whose supplier is still active.
+  // Historical orders are not deleted; they are simply excluded from this active view.
+  const activeSupplierIds = useMemo(
+    () => new Set((suppliers.data ?? []).filter((supplier) => supplier.isActive !== false).map((supplier) => supplier.id)),
+    [suppliers.data],
+  );
+  const activeOrders = useMemo(
+    () => (orders.data ?? []).filter((order) => activeSupplierIds.has(order.supplierId)),
+    [orders.data, activeSupplierIds],
+  );
+  const activeAllOrders = useMemo(
+    () => (all.data ?? []).filter((order) => activeSupplierIds.has(order.supplierId)),
+    [all.data, activeSupplierIds],
+  );
+
   // Same aggregates as app/costs/page.tsx.
   const summary = useMemo(() => {
-    const list = all.data ?? [];
+    const list = activeAllOrders;
     return {
       totalExpenses: list.reduce((sum, o) => sum + toNumber(o.totalAmount), 0),
       pending: list.filter((o) => o.status === 'pending').length,
     };
-  }, [all.data]);
+  }, [activeAllOrders]);
 
   const statusOptions: Option[] = [{ value: 'all', label: t('common.allStatus') }, ...ORDER_STATUSES.map((s) => ({ value: s, label: orderStatusLabel(t, s) }))];
 
@@ -52,7 +67,7 @@ export default function CostsScreen() {
           icon="people-outline"
           tone="info"
           label={t('costs.activeSuppliers')}
-          value={suppliers.data ? String(suppliers.data.length) : '—'}
+          value={suppliers.data ? String(suppliers.data.filter((supplier) => supplier.isActive !== false).length) : '—'}
           onPress={() => router.push('/suppliers')}
         />
       </StatGrid>
@@ -75,7 +90,7 @@ export default function CostsScreen() {
         }}
       />
       <FlatList
-        data={orders.data ?? []}
+        data={activeOrders}
         keyExtractor={(o) => o.id}
         ListHeaderComponent={header}
         refreshing={false}
