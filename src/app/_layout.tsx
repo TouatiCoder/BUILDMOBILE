@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { configureNotifications, subscribeToNotificationInteractions } from '@/lib/notifications';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -23,6 +24,23 @@ function RootNavigator() {
 
   useEffect(() => {
     if (state.status !== 'booting') void SplashScreen.hideAsync();
+  }, [state.status]);
+
+  useEffect(() => {
+    if (state.status !== 'signed-in') return;
+    let active = true;
+    void configureNotifications().then((token) => {
+      // The API currently has no push-token registration endpoint.
+      // Do not log or transmit the token until that endpoint exists.
+      if (!active || !token) return;
+    }).catch(() => {
+      // Notifications must never prevent the app from starting.
+    });
+    const unsubscribe = subscribeToNotificationInteractions();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [state.status]);
 
   useEffect(() => {
