@@ -758,7 +758,7 @@
     "stockTransfer": "Stock transfer",
     "warehouseRequiredError": "Warehouse is required",
     "sourceWarehouseRequiredError": "Source warehouse is required",
-    "sourceStockUnavailableWarning": "Stock is not broken down by warehouse in the received data. Verify the source warehouse and quantity before confirming the transfer."
+    "sourceStockUnavailableWarning": "Stock is not broken down by warehouse in the received data. Verify the source warehouse and quantity before confirming the transfer.",
     "destinationWarehouseRequiredError": "Destination warehouse is required",
     "differentWarehouseError": "Choose a different destination warehouse",
     "destinationWarehouse": "Destination warehouse",
