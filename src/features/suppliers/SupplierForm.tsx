@@ -20,7 +20,6 @@ export function SupplierForm({
 }) {
   const { t } = useI18n();
   const [name, setName] = useState(supplier?.name ?? '');
-  const [contactPerson, setContactPerson] = useState(supplier?.contactPerson ?? '');
   const [email, setEmail] = useState(supplier?.email ?? '');
   const [phone, setPhone] = useState(supplier?.phone ?? '');
   const [address, setAddress] = useState(supplier?.address ?? '');
@@ -30,7 +29,6 @@ export function SupplierForm({
     <Screen>
       <View style={{ gap: spacing.md }}>
         <AppInput label={t('suppliers.name')} value={name} onChangeText={(value) => { setName(value); setError(''); }} required autoCapitalize="words" />
-        <AppInput label={t('suppliers.contactPerson')} value={contactPerson} onChangeText={setContactPerson} autoCapitalize="words" />
         <AppInput label={t('suppliers.email')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
         <AppInput label={t('suppliers.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
         <AppInput label={t('suppliers.address')} value={address} onChangeText={setAddress} multiline numberOfLines={3} />
@@ -51,7 +49,7 @@ export function SupplierForm({
             }
             onSubmit({
               name: name.trim(),
-              contactPerson: contactPerson.trim() || null,
+              contactPerson: supplier?.contactPerson ?? null,
               email: email.trim() || null,
               phone: phone.trim() || null,
               address: address.trim() || null,
