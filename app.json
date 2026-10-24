@@ -7,12 +7,17 @@
     "icon": "./assets/images/icon.png",
     "scheme": "buildstock",
     "userInterfaceStyle": "light",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "bundleIdentifier": "com.buildstock.mobile",
       "supportsTablet": true,
       "icon": "./assets/expo.icon",
-      "config": { "usesNonExemptEncryption": false }
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.buildstock.mobile",
@@ -27,6 +32,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       "./plugins/with-http-test-backend",
       [
         "expo-splash-screen",
