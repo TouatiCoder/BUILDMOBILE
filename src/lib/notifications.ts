@@ -7,7 +7,7 @@ export async function configureNotifications(): Promise<string | null> {
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: true,
+      shouldPlaySound: false,
       shouldSetBadge: true,
     }),
   });
@@ -17,7 +17,6 @@ export async function configureNotifications(): Promise<string | null> {
       name: 'Notifications',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      sound: 'default',
     });
   }
 
