@@ -758,6 +758,7 @@
     "stockTransfer": "تحويل المخزون",
     "warehouseRequiredError": "المستودع مطلوب",
     "sourceWarehouseRequiredError": "المستودع المصدر مطلوب",
+    "sourceStockUnavailableWarning": "المخزون غير مفصل حسب المستودع في البيانات المستلمة. تحقق من المستودع المصدر والكمية قبل تأكيد التحويل."
     "destinationWarehouseRequiredError": "المستودع الوجهة مطلوب",
     "differentWarehouseError": "اختر مستودع وجهة مختلف",
     "destinationWarehouse": "المستودع الوجهة",
