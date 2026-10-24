@@ -24,7 +24,7 @@ export default function MaterialDetailScreen() {
   const material = useQuery({
     queryKey: ['inventory', 'material', id],
     queryFn: () => materialsApi.get(id),
-    refetchInterval: isFocused ? 1_000 : false,
+    refetchInterval: isFocused ? 30_000 : false,
     refetchIntervalInBackground: false,
   });
   // GET /api/materials/[id] only includes the latest inventory row; the inventory
@@ -32,7 +32,7 @@ export default function MaterialDetailScreen() {
   const allMaterials = useQuery({
     queryKey: ['inventory', 'materials', { all: true }],
     queryFn: () => inventoryApi.materials({}),
-    refetchInterval: isFocused ? 1_000 : false,
+    refetchInterval: isFocused ? 30_000 : false,
     refetchIntervalInBackground: false,
   });
 
