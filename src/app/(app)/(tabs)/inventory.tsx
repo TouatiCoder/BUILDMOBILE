@@ -52,7 +52,7 @@ export default function InventoryScreen() {
       seen.add(material.id);
       return true;
     });
-  }, [uniqueMaterials]);
+  }, [materials.data]);
 
   const filteredMaterials = useMemo(() => {
     const term = debounced.trim().toLocaleLowerCase();
@@ -86,7 +86,7 @@ export default function InventoryScreen() {
       if (state === 'critical') criticalStockCount += 1;
     }
     return { totalMaterials: rows.length, totalValue, lowStockCount, criticalStockCount };
-  }, [materials.data]);
+  }, [uniqueMaterials]);
 
   useFocusEffect(
     useCallback(() => {
