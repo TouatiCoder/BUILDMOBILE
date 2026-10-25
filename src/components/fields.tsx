@@ -294,7 +294,7 @@ export function DateField({
   );
 }
 
-export function SearchInput({ value, onChangeText, placeholder }: { value: string; onChangeText: (v: string) => void; placeholder?: string }) {
+export function SearchInput({ value, onChangeText, placeholder, placeholderFontSize }: { value: string; onChangeText: (v: string) => void; placeholder?: string; placeholderFontSize?: number }) {
   const { t, rtl } = useI18n();
   return (
     <View style={[styles.input, styles.search]}>
@@ -304,7 +304,7 @@ export function SearchInput({ value, onChangeText, placeholder }: { value: strin
         onChangeText={onChangeText}
         placeholder={placeholder ?? t('common.search')}
         placeholderTextColor={colors.textMuted}
-        style={[styles.searchText, { textAlign: rtl ? 'right' : 'left' }]}
+        style={[styles.searchText, placeholderFontSize ? { fontSize: placeholderFontSize } : null, { textAlign: rtl ? 'right' : 'left' }]}
         autoCorrect={false}
         autoCapitalize="none"
         returnKeyType="search"
