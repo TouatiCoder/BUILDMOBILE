@@ -226,7 +226,7 @@ describe.each(ROLES)('%s — tabs and blocked navigation', (role) => {
   it('cannot open a screen outside its rights by navigating to it', async () => {
     await renderApp(role);
     for (const [route, path] of [
-      ['orders/[id]', '/orders/o1'],
+      ['orders/[id]/index', '/orders/o1'],
       ['warehouses/index', '/warehouses'],
       ['suppliers', '/suppliers'],
       ['settings/company', '/settings/company'],

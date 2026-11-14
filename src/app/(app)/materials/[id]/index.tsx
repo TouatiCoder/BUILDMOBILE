@@ -43,6 +43,8 @@ export default function MaterialDetailScreen() {
     }, [material, allMaterials]),
   );
   const rows = allMaterials.data?.find((m) => m.id === id)?.inventory ?? material.data?.inventory ?? [];
+  // An empty "Sans dépôt" row carries no stock information; keep it for thresholds only.
+  const visibleRows = rows.filter((r) => r.warehouseId || toNumber(r.quantity) !== 0);
 
   const remove = useApiMutation({
     mutationFn: () => materialsApi.remove(id),
@@ -92,7 +94,7 @@ export default function MaterialDetailScreen() {
         <KeyValue label={t('inventory.category')} value={m.category ?? t('inventory.uncategorized')} />
         <KeyValue label={t('inventory.unit')} value={m.unit} />
         <KeyValue label={t('inventory.unitPrice')} value={formatCurrency(unitPrice, locale)} />
-        <KeyValue label={t('inventory.supplier')} value={m.supplier?.name ?? t('inventory.noSupplier')} />
+        <KeyValue label={t('inventory.supplier')} value={m.supplier && m.supplier.isActive !== false ? m.supplier.name : t('inventory.noSupplier')} />
         <KeyValue label={t('inventory.minThreshold')} value={formatNumber(s.minThreshold, locale)} />
         <KeyValue label={t('inventory.maxStockLabel')} value={s.maxThreshold != null ? formatNumber(s.maxThreshold, locale) : '—'} />
       </AppCard>
@@ -100,10 +102,10 @@ export default function MaterialDetailScreen() {
       <View>
         <SectionHeader title={t('inventory.byWarehouse')} />
         <ListGroup>
-          {rows.length === 0 ? (
+          {visibleRows.length === 0 ? (
             <ListRow title={t('inventory.noMaterialsFound')} />
           ) : (
-            rows.map((r) => (
+            visibleRows.map((r) => (
               <ListRow
                 key={r.id}
                 icon="business-outline"

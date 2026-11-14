@@ -52,7 +52,8 @@ function initial(material?: MaterialDetail): Values {
     unit: material ? (unitKnown ? material.unit : OTHER) : 'unit',
     customUnit: material && !unitKnown ? material.unit : '',
     unitPrice: material ? String(toNumberOrNull(material.unitPrice) ?? '') : '',
-    supplierId: material?.supplierId ?? null,
+    // A soft-deleted supplier must not be re-saved on the material.
+    supplierId: material?.supplier?.isActive === false ? null : material?.supplierId ?? null,
     minStockLevel: stock ? String(stock.minThreshold) : '',
     maxStockLevel: stock?.maxThreshold != null ? String(stock.maxThreshold) : '',
     description: material?.description ?? '',

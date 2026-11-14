@@ -217,6 +217,9 @@ export type PurchaseOrderDetail = PurchaseOrder & {
   }[];
 };
 
+/** Order line sent to POST /api/purchase-orders and PUT /api/purchase-orders/[id]/items. */
+export type PurchaseOrderItemInput = { material_id: string; quantity: number; unit_price: number; notes?: string | null };
+
 export type AppNotification = {
   id: string;
   typeCode: string;

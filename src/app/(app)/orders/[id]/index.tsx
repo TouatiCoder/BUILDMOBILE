@@ -4,13 +4,12 @@ import { View } from 'react-native';
 
 import { ordersApi } from '@/api/endpoints';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
-import { DateField, SelectField, type Option } from '@/components/fields';
 import { ListGroup, ListRow, Screen } from '@/components/layout';
 import { AppText, StatusBadge, AppButton, AppCard, KeyValue, SectionHeader } from '@/components/primitives';
 import { useApiMutation, useConfirm, usePermissions } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatDate, formatDateTime, formatNumber, fullName, toNumber } from '@/lib/format';
-import { orderStatusLabel, orderStatusTone, ORDER_STATUSES } from '@/lib/labels';
+import { orderStatusLabel, orderStatusTone } from '@/lib/labels';
 import { spacing } from '@/theme/tokens';
 
 /**
@@ -27,11 +26,6 @@ export default function OrderDetailScreen() {
   const canEdit = allows('orders.edit');
   const order = useQuery({ queryKey: ['orders', 'detail', id], queryFn: () => ordersApi.get(id) });
 
-  const update = useApiMutation({
-    mutationFn: (input: Parameters<typeof ordersApi.update>[1]) => ordersApi.update(id, input),
-    invalidate: [['orders']],
-    successMessage: t('costs.orderUpdated'),
-  });
   const remove = useApiMutation({
     mutationFn: () => ordersApi.remove(id),
     invalidate: [['orders']],
@@ -55,7 +49,6 @@ export default function OrderDetailScreen() {
   }
 
   const o = order.data;
-  const statusOptions: Option[] = ORDER_STATUSES.map((s) => ({ value: s, label: orderStatusLabel(t, s) }));
   const itemsTotal = o.items.reduce((sum, it) => sum + toNumber(it.totalPrice), 0);
 
   return (
@@ -68,29 +61,10 @@ export default function OrderDetailScreen() {
         <AppText variant="caption">{t('costs.totalTaxIncluded')}</AppText>
       </AppCard>
 
-      {canEdit ? (
-      <AppCard style={{ gap: spacing.lg }}>
-        <SectionHeader title={t('costs.editOrder')} />
-        <SelectField
-          label={t('costs.status')}
-          value={o.status}
-          options={statusOptions}
-          onChange={(v) => v && v !== o.status && update.mutate({ status: v })}
-          disabled={update.isPending}
-        />
-        <DateField label={t('costs.orderDate')} value={o.orderDate ? o.orderDate.slice(0, 10) : null} onChange={(v) => update.mutate({ orderDate: v })} />
-        <DateField
-          label={t('costs.expectedDelivery')}
-          value={o.expectedDelivery ? o.expectedDelivery.slice(0, 10) : null}
-          onChange={(v) => update.mutate({ expectedDelivery: v })}
-        />
+      <AppCard style={{ gap: spacing.xs }}>
+        <KeyValue icon="calendar-outline" label={t('costs.orderDate')} value={formatDate(o.orderDate, locale)} />
+        <KeyValue icon="time-outline" label={t('costs.expectedDelivery')} value={formatDate(o.expectedDelivery, locale)} />
       </AppCard>
-      ) : (
-        <AppCard style={{ gap: spacing.xs }}>
-          <KeyValue icon="calendar-outline" label={t('costs.orderDate')} value={formatDate(o.orderDate, locale)} />
-          <KeyValue icon="time-outline" label={t('costs.expectedDelivery')} value={formatDate(o.expectedDelivery, locale)} />
-        </AppCard>
-      )}
 
       <AppCard style={{ gap: spacing.xs }}>
         <SectionHeader title={t('costs.supplierInfoTitle')} />
@@ -123,6 +97,13 @@ export default function OrderDetailScreen() {
       </View>
 
       {canEdit ? (
+        <View style={{ gap: spacing.sm }}>
+        <AppButton
+          title={locale === 'ar' ? 'تعديل' : locale === 'en' ? 'Edit' : 'Modifier'}
+          icon="create-outline"
+          variant="secondary"
+          onPress={() => router.push({ pathname: '/orders/[id]/edit', params: { id } })}
+        />
         <AppButton
           title={t('common.delete')}
           icon="trash-outline"
@@ -132,6 +113,7 @@ export default function OrderDetailScreen() {
             if (await confirm({ message: t('costs.deleteOrderConfirm') })) remove.mutate();
           }}
         />
+        </View>
       ) : null}
     </Screen>
   );

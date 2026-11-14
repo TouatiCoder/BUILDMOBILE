@@ -10,6 +10,7 @@ import { ChipGroup, SearchInput, SelectField, type Option } from '@/components/f
 import { StatCard, StatGrid } from '@/components/layout';
 import { AppText, StatusBadge, IconTile, type IconName } from '@/components/primitives';
 import { usePermissions } from '@/hooks/common';
+import { useActiveSuppliers } from '@/hooks/useActiveSuppliers';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatNumber, toNumber } from '@/lib/format';
@@ -45,14 +46,15 @@ export default function InventoryScreen() {
 
   // The inventory API can include repeated material rows on some deployments.
   // Deduplicate by stable material ID before deriving counts, stock totals, and list rows.
+  const { withActiveSupplier } = useActiveSuppliers();
   const uniqueMaterials = useMemo(() => {
     const seen = new Set<string>();
     return (materials.data ?? []).filter((material) => {
       if (seen.has(material.id)) return false;
       seen.add(material.id);
       return true;
-    });
-  }, [materials.data]);
+    }).map(withActiveSupplier);
+  }, [materials.data, withActiveSupplier]);
 
   const filteredMaterials = useMemo(() => {
     const term = debounced.trim().toLocaleLowerCase();

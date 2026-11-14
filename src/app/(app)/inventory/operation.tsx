@@ -14,6 +14,9 @@ import { spacing } from '@/theme/tokens';
 
 type Mode = 'entry' | 'transfer';
 
+/** Source value for stock that is not linked to any warehouse ("Sans dépôt"). */
+const UNASSIGNED = '__unassigned__';
+
 /**
  * Stock entry and warehouse-to-warehouse transfer, the two operations of
  * POST /api/inventory used by the website's /inventory/entry/new and
@@ -21,7 +24,7 @@ type Mode = 'entry' | 'transfer';
  */
 export default function InventoryOperationScreen() {
   const params = useLocalSearchParams<{ mode?: string; materialId?: string }>();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>(params.mode === 'transfer' ? 'transfer' : 'entry');
   const [materialId, setMaterialId] = useState<string | null>(params.materialId ?? null);
   const [warehouseId, setWarehouseId] = useState<string | null>(null);
@@ -37,16 +40,18 @@ export default function InventoryOperationScreen() {
   const onDone = () => router.back();
   const entry = useApiMutation({ mutationFn: inventoryApi.entry, invalidate: [['inventory']], successMessage: t('inventory.entrySaved'), onSuccess: onDone });
   const transfer = useApiMutation({ mutationFn: inventoryApi.transfer, invalidate: [['inventory']], successMessage: t('inventory.transferSaved'), onSuccess: onDone });
+  const assign = useApiMutation({ mutationFn: inventoryApi.assignUnassigned, invalidate: [['inventory']], successMessage: t('inventory.transferSaved'), onSuccess: onDone });
 
   const selectedMaterial = (materials.data ?? []).find((m) => m.id === materialId);
   const materialOptions: Option[] = (materials.data ?? []).map((m) => ({ value: m.id, label: m.name, description: m.unit }));
   const sourceStockByWarehouse = useMemo(() => {
     const stock = new Map<string, number>();
-    // Only warehouse-linked rows can safely drive automatic source selection.
-    // Aggregate stock must never be attributed to an arbitrary warehouse.
+    // Rows without a warehouse ("Sans dépôt") are grouped under UNASSIGNED so
+    // they can be moved into a real warehouse.
     for (const row of selectedMaterial?.inventory ?? []) {
-      if (!row.warehouseId) continue;
-      stock.set(row.warehouseId, (stock.get(row.warehouseId) ?? 0) + toNumber(row.quantity));
+      if (row.id.endsWith(':aggregate')) continue;
+      const key = row.warehouseId ?? UNASSIGNED;
+      stock.set(key, (stock.get(key) ?? 0) + toNumber(row.quantity));
     }
     return stock;
   }, [selectedMaterial]);
@@ -65,13 +70,21 @@ export default function InventoryOperationScreen() {
     };
   });
 
-  // If the selected material has stock in exactly one known warehouse, select
-  // that warehouse automatically as the transfer source. Never guess when the
-  // API only returns an aggregate quantity or multiple warehouses have stock.
+  const unassignedStock = sourceStockByWarehouse.get(UNASSIGNED) ?? 0;
+  const sourceOptions: Option[] = [
+    ...warehouseOptions.filter((w) => (sourceStockByWarehouse.get(w.value) ?? 0) > 0),
+    ...(unassignedStock > 0
+      ? [{ value: UNASSIGNED, label: t('inventory.noWarehouse'), description: `Stock: ${unassignedStock} ${selectedMaterial?.unit ?? ''}`.trim() }]
+      : []),
+  ];
+
+  // Pre-select the source holding the most stock (a warehouse or "Sans dépôt").
+  // The user can still pick another source that has stock.
   useEffect(() => {
     if (mode !== 'transfer') return;
-    setSourceId(positiveSourceWarehouses.length === 1 ? positiveSourceWarehouses[0][0] : null);
-    setDestinationId((current) => current && positiveSourceWarehouses.length === 1 && current === positiveSourceWarehouses[0][0] ? null : current);
+    const best = [...positiveSourceWarehouses].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    setSourceId(best);
+    setDestinationId((current) => (current && current === best ? null : current));
     setQuantity('');
     setErrors({});
   }, [materialId, mode, positiveSourceWarehouses]);
@@ -95,13 +108,15 @@ export default function InventoryOperationScreen() {
     if (Object.keys(next).length > 0 || !materialId || qty === null) return;
     if (mode === 'entry' && warehouseId) {
       entry.mutate({ material_id: materialId, warehouse_id: warehouseId, quantity: qty, notes: notes.trim() });
+    } else if (mode === 'transfer' && sourceId === UNASSIGNED && destinationId) {
+      assign.mutate({ material_id: materialId, destination_warehouse_id: destinationId, quantity: qty, notes: notes.trim() });
     } else if (mode === 'transfer' && sourceId && destinationId) {
       transfer.mutate({ material_id: materialId, source_warehouse_id: sourceId, destination_warehouse_id: destinationId, quantity: qty, notes: notes.trim() });
     }
   };
 
   const title = mode === 'entry' ? t('inventory.newStockEntryTitle') : t('inventory.newStockTransferTitle');
-  const pending = entry.isPending || transfer.isPending;
+  const pending = entry.isPending || transfer.isPending || assign.isPending;
 
   if (materials.isLoading || warehouses.isLoading) {
     return (
@@ -155,14 +170,14 @@ export default function InventoryOperationScreen() {
           />
         ) : (
           <>
-            {selectedMaterial && sourceStockByWarehouse.size === 0 ? (
+            {selectedMaterial && sourceOptions.length === 0 ? (
               <AppText variant="small" color="warning">{t('inventory.sourceStockUnavailableWarning')}</AppText>
             ) : null}
             <SelectField
               label={t('inventory.sourceWarehouse')}
               required
               value={sourceId}
-              options={warehouseOptions.filter((w) => sourceStockByWarehouse.get(w.value) === undefined || (sourceStockByWarehouse.get(w.value) ?? 0) > 0)}
+              options={sourceOptions}
               onChange={(value) => { setSourceId(value); setQuantity(''); setErrors({}); }}
               placeholder={t('inventory.selectSourceWarehouse')}
               error={errors.source}

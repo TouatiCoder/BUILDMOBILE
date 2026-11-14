@@ -35,6 +35,7 @@ import type {
   RegisterInput,
   PurchaseOrder,
   PurchaseOrderDetail,
+  PurchaseOrderItemInput,
   StockMovementRow,
   SubscriptionInfo,
   Supplier,
@@ -164,6 +165,9 @@ export const inventoryApi = {
     api.post<{ success: true; id: string }>('/api/inventory', { operation: 'entry', ...input }),
   transfer: (input: { material_id: string; source_warehouse_id: string; destination_warehouse_id: string; quantity: number; notes?: string }) =>
     api.post<{ success: true; id: string }>('/api/inventory', { operation: 'transfer', ...input }),
+  /** Moves stock that has no warehouse ("Sans dépôt") into a warehouse. */
+  assignUnassigned: (input: { material_id: string; destination_warehouse_id: string; quantity: number; notes?: string }) =>
+    api.post<{ success: true; id: string }>('/api/inventory', { operation: 'transfer', from_unassigned: true, ...input }),
 };
 
 export const materialsApi = {
@@ -202,10 +206,13 @@ export const suppliersApi = {
 export const ordersApi = {
   list: (params: { search?: string; status?: string; limit?: number }) => api.get<PurchaseOrder[]>('/api/purchase-orders', params),
   get: (id: string) => api.get<PurchaseOrderDetail>(`/api/purchase-orders/${id}`),
-  create: (input: { supplierId: string; orderDate?: string | null; expectedDelivery?: string | null }) =>
+  create: (input: { supplierId: string; orderDate?: string | null; expectedDelivery?: string | null; items: PurchaseOrderItemInput[] }) =>
     api.post<PurchaseOrder>('/api/purchase-orders', input),
   update: (id: string, input: { status?: string; orderDate?: string | null; expectedDelivery?: string | null }) =>
     api.patch<PurchaseOrder>(`/api/purchase-orders/${id}`, input),
+  /** Replaces every line of the order; the server recomputes line and order totals. */
+  replaceItems: (id: string, items: PurchaseOrderItemInput[]) =>
+    api.put<PurchaseOrderDetail>(`/api/purchase-orders/${id}/items`, { items }),
   remove: (id: string) => api.delete<{ success: true }>(`/api/purchase-orders/${id}`),
 };
 
