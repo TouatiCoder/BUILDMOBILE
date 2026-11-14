@@ -59,8 +59,9 @@ function EditOrderForm({ order: o, title }: { order: PurchaseOrderDetail; title:
   const { withActiveSupplier } = useActiveSuppliers();
   const materials = useQuery({ queryKey: ['inventory', 'materials', 'purchase-order'], queryFn: () => inventoryApi.materials({}) });
 
-  const [initialLines] = useState<LineDraft[]>(() => o.items.map((it) => ({
-    materialId: it.material?.id ?? it.id,
+  // Lines whose material no longer exists cannot be re-sent to the server.
+  const [initialLines] = useState<LineDraft[]>(() => o.items.filter((it) => it.material?.id).map((it) => ({
+    materialId: it.material!.id,
     name: it.material?.name ?? '—',
     unit: it.material?.unit ?? '',
     quantity: String(toNumber(it.quantity)),

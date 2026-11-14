@@ -19,7 +19,7 @@ export default function SuppliersScreen() {
   const q = useQuery({ queryKey: ['suppliers'], queryFn: suppliersApi.list });
   const remove = useApiMutation({
     mutationFn: suppliersApi.remove,
-    invalidate: [['suppliers']],
+    invalidate: [['suppliers'], ['inventory']],
     successMessage: t('suppliers.deleted'),
   });
   const items = useMemo(() => {

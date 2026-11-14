@@ -26,6 +26,8 @@
 - [x] 8. Bouton **Modifier** → `orders/[id]/edit.tsx` : statut, dates + lignes modifiables (quantité, prix, ajouter/retirer). Détail déplacé dans `orders/[id]/index.tsx`, règles d'accès mises à jour (`src/lib/access.ts`, test role-parity)
 - [x] Mobile : `npx tsc --noEmit` OK, `npx jest` 105/105
 - [x] Backend : aucune erreur TS dans les fichiers modifiés (28 erreurs TS préexistantes ailleurs dans `stock`)
+- [x] Vérification finale : suppression fournisseur (`DELETE /api/suppliers/[id]`) délie aussi ses matériaux (`supplierId = null`) ; mobile invalide l'inventaire après suppression ; écran Modifier ignore les lignes sans matériau
+- [ ] Nettoyer les anciens liens en base (fournisseurs déjà supprimés, ex. Haji Motawakil) : `UPDATE materials m JOIN suppliers s ON s.id = m.supplier_id SET m.supplier_id = NULL WHERE s.is_active = 0;`
 - [ ] **Déployer le backend `stock`** (sinon le mobile reçoit encore l'ancien comportement)
 - [ ] Test manuel sur téléphone (création commande, modification lignes, transfert "Sans dépôt")
 - [ ] Commit des deux dépôts (rien n'est commité)
