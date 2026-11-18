@@ -258,7 +258,11 @@ export const companyApi = {
   /** The web form sends snake_case keys for some fields (see company-settings.tsx). */
   update: (companyId: string, input: Record<string, string | null>) => api.put<Company>(`/api/company/${companyId}`, input),
   users: () => api.get<CompanyUser[]>('/api/company/users'),
-  deactivateUser: (userId: string) => api.delete<{ success: true }>(`/api/company/users/${userId}`),
+  setUserActive: (userId: string, active: boolean) =>
+    api.patch<{ success: true; active: boolean }>(`/api/company/users/${userId}`, { active }),
+  /** Erases the account, or anonymizes it when it has history to keep. */
+  removeUser: (userId: string) =>
+    api.delete<{ success: true; removal: 'erased' | 'anonymized' }>(`/api/company/users/${userId}?permanent=true`),
   invite: (input: { email: string; role: string; firstName: string; lastName: string }) =>
     api.post<{ success?: boolean }>('/api/company/users/invite', input),
   invitations: (companyId: string) => api.get<Invitation[]>('/api/invitations', { companyId }),

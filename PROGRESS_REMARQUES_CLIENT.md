@@ -28,9 +28,10 @@
 - [x] Backend : aucune erreur TS dans les fichiers modifiés (28 erreurs TS préexistantes ailleurs dans `stock`)
 - [x] Vérification finale : suppression fournisseur (`DELETE /api/suppliers/[id]`) délie aussi ses matériaux (`supplierId = null`) ; mobile invalide l'inventaire après suppression ; écran Modifier ignore les lignes sans matériau
 - [x] (fait le 2026-11-14 sur stock_db, 8 matériaux déliés : Rayan rahmani, Nassim, Haji Motawakil, Jaj) Nettoyer les anciens liens en base (fournisseurs déjà supprimés, ex. Haji Motawakil) : `UPDATE materials m JOIN suppliers s ON s.id = m.supplier_id SET m.supplier_id = NULL WHERE s.is_active = 0;`
+- [x] Écran Utilisateurs (`settings/users.tsx`) : boutons Activer / Désactiver / Supprimer (admin, pas sur son propre compte)
 - [ ] **Déployer le backend `stock`** (sinon le mobile reçoit encore l'ancien comportement)
-- [ ] Test manuel sur téléphone (création commande, modification lignes, transfert "Sans dépôt")
-- [ ] Commit des deux dépôts (rien n'est commité)
+- [ ] Test manuel sur téléphone (création commande, modification lignes, transfert "Sans dépôt", activer / désactiver / supprimer un utilisateur)
+- [ ] Commit des changements utilisateurs dans les deux dépôts
 
 ## Endpoints ajoutés dans `stock`
 
@@ -40,6 +41,9 @@
   - `app/api/purchase-orders/[id]/items/route.ts`
 - `POST /api/inventory` avec `{ operation: "transfer", from_unassigned: true, material_id, destination_warehouse_id, quantity }` : déplace le stock "Sans dépôt" (warehouseId null) vers un dépôt ; mouvement `transfer` avec `sourceType: "unassigned"`.
   - `app/api/inventory/route.ts`, `lib/services/inventoryService.ts#assignUnassignedStock`
+- `PATCH /api/company/users/[userId]` avec `{ active: boolean }` : active ou désactive (admin). Refus si invitation non acceptée (409) ou limite d'utilisateurs du plan atteinte.
+- `DELETE /api/company/users/[userId]?permanent=true` : sans historique = suppression définitive ; avec historique (commandes, checklists, paiements, invitations envoyées, mouvements) = compte anonymisé (`deleted-<id>@deleted.invalid`), masqué des listes, historique conservé, email réutilisable. `DELETE` sans paramètre = désactivation, comme avant (utilisé par le web).
+  - `app/api/company/users/[userId]/route.ts`, `lib/users/removed-users.ts`, filtres dans `app/api/company/users/route.ts` et `app/api/users/route.ts`
 
 ## Notes techniques
 

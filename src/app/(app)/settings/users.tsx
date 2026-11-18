@@ -27,7 +27,20 @@ export default function UsersScreen() {
     enabled: isAdmin && !!user,
   });
 
-  const deactivate = useApiMutation({ mutationFn: companyApi.deactivateUser, invalidate: [['company', 'users']], successMessage: t('settings.deleteUserSuccess') });
+  const setActive = useApiMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) => companyApi.setUserActive(id, active),
+    invalidate: [['company', 'users']],
+    successMessage: t('common.success'),
+  });
+  const removeUser = useApiMutation({
+    mutationFn: companyApi.removeUser,
+    invalidate: [['company', 'users'], ['company', 'invitations']],
+    successMessage: t('users.removed'),
+  });
+  const userActionPending = setActive.isPending || removeUser.isPending;
+  const pendingInviteEmails = new Set(
+    (invitations.data ?? []).filter((inv) => !inv.acceptedAt).map((inv) => inv.email.toLowerCase()),
+  );
   const cancelInvite = useApiMutation({ mutationFn: companyApi.cancelInvitation, invalidate: [['company', 'invitations']], successMessage: t('settings.invitationCanceled') });
 
   if (!isAdmin) {
@@ -69,6 +82,8 @@ export default function UsersScreen() {
             {(users.data ?? []).map((u) => {
               const name = fullName(u) || u.email;
               const active = u.active ?? u.isActive;
+              const invitePending = !active && pendingInviteEmails.has(u.email.toLowerCase());
+              const canManage = u.id !== user?.id;
               return (
                 <ListRow
                   key={u.id}
@@ -81,19 +96,47 @@ export default function UsersScreen() {
                       <StatusBadge label={roleLabel(t, u.role)} tone="info" />
                       <StatusBadge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'success' : 'neutral'} />
                       {u.lastLoginAt ? <AppText variant="caption">{formatDateTime(u.lastLoginAt, locale)}</AppText> : null}
+                      {canManage ? (
+                        <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', width: '100%', marginTop: spacing.xs }}>
+                          {active ? (
+                            <AppButton
+                              title={t('users.deactivate')}
+                              icon="pause-circle-outline"
+                              variant="secondary"
+                              size="sm"
+                              disabled={userActionPending}
+                              accessibilityLabel={`${t('users.deactivate')} ${name}`}
+                              onPress={async () => {
+                                if (await confirm({ title: t('users.deactivate'), message: t('users.deactivateConfirm', { name }), confirmLabel: t('users.deactivate') })) setActive.mutate({ id: u.id, active: false });
+                              }}
+                            />
+                          ) : !invitePending ? (
+                            <AppButton
+                              title={t('users.activate')}
+                              icon="checkmark-circle-outline"
+                              variant="secondary"
+                              size="sm"
+                              disabled={userActionPending}
+                              accessibilityLabel={`${t('users.activate')} ${name}`}
+                              onPress={async () => {
+                                if (await confirm({ title: t('users.activate'), message: t('users.activateConfirm', { name }), confirmLabel: t('users.activate'), destructive: false })) setActive.mutate({ id: u.id, active: true });
+                              }}
+                            />
+                          ) : null}
+                          <AppButton
+                            title={t('common.delete')}
+                            icon="trash-outline"
+                            variant="danger"
+                            size="sm"
+                            disabled={userActionPending}
+                            accessibilityLabel={`${t('common.delete')} ${name}`}
+                            onPress={async () => {
+                              if (await confirm({ message: t('users.removeConfirm', { name }), confirmLabel: t('common.delete') })) removeUser.mutate(u.id);
+                            }}
+                          />
+                        </View>
+                      ) : null}
                     </View>
-                  }
-                  right={
-                    active && u.id !== user?.id ? (
-                      <IconButton
-                        icon="person-remove-outline"
-                        color={colors.danger}
-                        accessibilityLabel={`${t('users.deactivate')} ${name}`}
-                        onPress={async () => {
-                          if (await confirm({ message: t('users.deactivateConfirm', { name }), confirmLabel: t('users.deactivate') })) deactivate.mutate(u.id);
-                        }}
-                      />
-                    ) : undefined
                   }
                 />
               );
