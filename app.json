@@ -34,6 +34,7 @@
       "expo-router",
       "expo-notifications",
       "./plugins/with-http-test-backend",
+      "./plugins/with-disabled-network-inspector",
       [
         "expo-splash-screen",
         {
