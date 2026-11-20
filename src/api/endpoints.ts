@@ -161,6 +161,9 @@ export const inventoryApi = {
   filters: () => api.get<{ categories: string[]; suppliers: { id: string; name: string }[] }>('/api/inventory/materials/filters'),
   stats: () => api.get<InventoryStats>('/api/inventory/stats'),
   movements: (limit: number) => api.get<StockMovementRow[]>('/api/inventory/movements', { limit }),
+  /** Sets the exact stock of a material in one warehouse (PATCH /api/inventory). */
+  setQuantity: (input: { material_id: string; warehouse_id: string; quantity: number }) =>
+    api.patch<{ success: true; quantity: number; created: boolean }>('/api/inventory', input),
   entry: (input: { material_id: string; warehouse_id: string; quantity: number; notes?: string }) =>
     api.post<{ success: true; id: string }>('/api/inventory', { operation: 'entry', ...input }),
   transfer: (input: { material_id: string; source_warehouse_id: string; destination_warehouse_id: string; quantity: number; notes?: string }) =>

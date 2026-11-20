@@ -93,6 +93,76 @@ export function ReasonDialog({
   );
 }
 
+/**
+ * Modal to enter a new quantity (zero or more). Mount it only while open
+ * (with a `key`) so it starts from `initialValue` each time.
+ */
+export function QuantityDialog({
+  title,
+  message,
+  label,
+  initialValue,
+  invalidMessage,
+  confirmLabel,
+  loading = false,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  message?: string;
+  label: string;
+  initialValue: string;
+  invalidMessage: string;
+  confirmLabel: string;
+  loading?: boolean;
+  onCancel: () => void;
+  onConfirm: (quantity: number) => void;
+}) {
+  const { t } = useI18n();
+  const direction = useDirectionStyle();
+  const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState<string>();
+
+  const submit = () => {
+    const quantity = Number(value.trim().replace(/\s/g, '').replace(',', '.'));
+    if (value.trim() === '' || !Number.isFinite(quantity) || quantity < 0) {
+      setError(invalidMessage);
+      return;
+    }
+    onConfirm(quantity);
+  };
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+      <KeyboardAvoidingView style={[styles.backdrop, direction]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel={t('common.cancel')} />
+        <View style={styles.card}>
+          <AppText variant="title" accessibilityRole="header">
+            {title}
+          </AppText>
+          {message ? <AppText variant="small">{message}</AppText> : null}
+          <AppInput
+            label={label}
+            value={value}
+            onChangeText={(v) => {
+              setValue(v.replace(/[^0-9.,]/g, ''));
+              if (error) setError(undefined);
+            }}
+            keyboardType="decimal-pad"
+            error={error}
+            autoFocus
+            selectTextOnFocus
+          />
+          <View style={styles.actions}>
+            <AppButton title={t('common.cancel')} variant="secondary" onPress={onCancel} style={{ flex: 1 }} disabled={loading} />
+            <AppButton title={confirmLabel} onPress={submit} loading={loading} style={{ flex: 1 }} />
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xl },
   card: {

@@ -29,6 +29,7 @@
 - [x] Vérification finale : suppression fournisseur (`DELETE /api/suppliers/[id]`) délie aussi ses matériaux (`supplierId = null`) ; mobile invalide l'inventaire après suppression ; écran Modifier ignore les lignes sans matériau
 - [x] (fait le 2026-11-14 sur stock_db, 8 matériaux déliés : Rayan rahmani, Nassim, Haji Motawakil, Jaj) Nettoyer les anciens liens en base (fournisseurs déjà supprimés, ex. Haji Motawakil) : `UPDATE materials m JOIN suppliers s ON s.id = m.supplier_id SET m.supplier_id = NULL WHERE s.is_active = 0;`
 - [x] Écran Utilisateurs (`settings/users.tsx`) : boutons Activer / Désactiver / Supprimer (admin, pas sur son propre compte)
+- [x] Fiche matériau : icône crayon sur chaque dépôt → modifier la quantité du dépôt (`PATCH /api/inventory`, déjà présent sur le serveur ; pas sur "Sans dépôt")
 - [ ] **Déployer le backend `stock`** (sinon le mobile reçoit encore l'ancien comportement)
 - [ ] Test manuel sur téléphone (création commande, modification lignes, transfert "Sans dépôt", activer / désactiver / supprimer un utilisateur)
 - [ ] Commit des changements utilisateurs dans les deux dépôts

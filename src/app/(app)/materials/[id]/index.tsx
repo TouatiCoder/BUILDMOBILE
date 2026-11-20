@@ -1,18 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 import { inventoryApi, materialsApi } from '@/api/endpoints';
+import { QuantityDialog } from '@/components/dialogs';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
 import { ListGroup, ListRow, Screen, StatCard, StatGrid } from '@/components/layout';
-import { AppText, StatusBadge, AppButton, AppCard, KeyValue, SectionHeader } from '@/components/primitives';
+import { AppText, StatusBadge, AppButton, AppCard, IconButton, KeyValue, SectionHeader } from '@/components/primitives';
 import { useApiMutation, useConfirm, usePermissions } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatNumber, toNumber } from '@/lib/format';
 import { aggregateStock } from '@/lib/inventory';
 import { stockState, stockStateLabel, stockStateTone } from '@/lib/labels';
-import { spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 export default function MaterialDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,6 +21,8 @@ export default function MaterialDetailScreen() {
   const { can } = usePermissions();
   const confirm = useConfirm();
   const isFocused = useIsFocused();
+  const tr = (fr: string, en: string, ar: string) => (locale === 'ar' ? ar : locale === 'en' ? en : fr);
+  const [editingRow, setEditingRow] = useState<{ warehouseId: string; name: string; quantity: number } | null>(null);
 
   const material = useQuery({
     queryKey: ['inventory', 'material', id],
@@ -45,6 +48,15 @@ export default function MaterialDetailScreen() {
   const rows = allMaterials.data?.find((m) => m.id === id)?.inventory ?? material.data?.inventory ?? [];
   // An empty "Sans dépôt" row carries no stock information; keep it for thresholds only.
   const visibleRows = rows.filter((r) => r.warehouseId || toNumber(r.quantity) !== 0);
+
+  // Same "set quantity" operation as PATCH /api/inventory: replaces the stock
+  // of this material in one warehouse.
+  const setQuantity = useApiMutation({
+    mutationFn: inventoryApi.setQuantity,
+    invalidate: [['inventory']],
+    successMessage: tr('Quantité mise à jour', 'Quantity updated', 'تم تحديث الكمية'),
+    onSuccess: () => setEditingRow(null),
+  });
 
   const remove = useApiMutation({
     mutationFn: () => materialsApi.remove(id),
@@ -110,12 +122,39 @@ export default function MaterialDetailScreen() {
                 key={r.id}
                 icon="business-outline"
                 title={r.warehouse?.name ?? t('inventory.noWarehouse')}
-                right={<AppText variant="bodyStrong">{`${formatNumber(toNumber(r.quantity), locale)} ${m.unit}`}</AppText>}
+                right={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <AppText variant="bodyStrong">{`${formatNumber(toNumber(r.quantity), locale)} ${m.unit}`}</AppText>
+                    {can('manage_inventory') && r.warehouseId ? (
+                      <IconButton
+                        icon="create-outline"
+                        color={colors.brand}
+                        accessibilityLabel={`${tr('Modifier la quantité', 'Edit quantity', 'تعديل الكمية')} — ${r.warehouse?.name ?? ''}`}
+                        onPress={() => setEditingRow({ warehouseId: r.warehouseId!, name: r.warehouse?.name ?? '', quantity: toNumber(r.quantity) })}
+                      />
+                    ) : null}
+                  </View>
+                }
               />
             ))
           )}
         </ListGroup>
       </View>
+
+      {editingRow ? (
+        <QuantityDialog
+          key={editingRow.warehouseId}
+          title={tr('Modifier la quantité', 'Edit quantity', 'تعديل الكمية')}
+          message={`${m.name} — ${editingRow.name}`}
+          label={`${tr('Nouvelle quantité', 'New quantity', 'الكمية الجديدة')} (${m.unit})`}
+          initialValue={String(editingRow.quantity)}
+          invalidMessage={tr('Saisissez une quantité de 0 ou plus.', 'Enter a quantity of 0 or more.', 'دخل كمية 0 أو أكثر.')}
+          confirmLabel={t('common.save')}
+          loading={setQuantity.isPending}
+          onCancel={() => setEditingRow(null)}
+          onConfirm={(quantity) => setQuantity.mutate({ material_id: id, warehouse_id: editingRow.warehouseId, quantity })}
+        />
+      ) : null}
 
       {can('manage_inventory') ? (
         <View style={{ gap: spacing.sm }}>
