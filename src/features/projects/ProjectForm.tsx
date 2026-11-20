@@ -11,7 +11,7 @@ import { Screen } from '@/components/layout';
 import { AppButton, AppCard, SectionHeader } from '@/components/primitives';
 import { useI18n } from '@/i18n/I18nProvider';
 import { parseDecimalInput, toNumberOrNull } from '@/lib/format';
-import { PROJECT_STATUSES, PROJECT_TYPES, projectStatusLabel } from '@/lib/labels';
+import { PROJECT_STATUSES, PROJECT_TYPES, projectStatusLabel, roleLabel } from '@/lib/labels';
 import { spacing } from '@/theme/tokens';
 
 const OTHER = '__other__';
@@ -74,11 +74,24 @@ export function ProjectForm({
   submitting: boolean;
   onSubmit: (input: ProjectInput) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const users = useQuery({ queryKey: ['users', 'project-team-options'], queryFn: () => usersApi.list({ limit: 100 }) });
-  const teamOptions: Option[] = (users.data?.users ?? [])
-    .filter((user) => user.active)
-    .map((user) => ({ value: user.id, label: user.fullName?.trim() || `${user.firstName} ${user.lastName}`.trim() || user.email }));
+  const allUsers = users.data?.users ?? [];
+  const userLabel = (user: (typeof allUsers)[number]) =>
+    user.fullName?.trim() || `${user.firstName} ${user.lastName}`.trim() || user.email;
+  // Each picker only offers active users with the matching role. A current
+  // assignee with another role is kept (flagged) so the user can see and fix it.
+  const teamOptionsFor = (role: 'site_manager' | 'structural_engineer', currentId: string): Option[] => {
+    const options: Option[] = allUsers
+      .filter((user) => user.active && user.role === role)
+      .map((user) => ({ value: user.id, label: userLabel(user) }));
+    const current = currentId ? allUsers.find((user) => user.id === currentId) : undefined;
+    if (current && !options.some((option) => option.value === current.id)) {
+      const wrongRole = locale === 'ar' ? 'الدور لا يطابق' : locale === 'en' ? 'role does not match' : 'rôle non adapté';
+      options.unshift({ value: current.id, label: userLabel(current), description: `${roleLabel(t, current.role)} — ${wrongRole}` });
+    }
+    return options;
+  };
 
   const schema = z
     .object({
@@ -176,7 +189,7 @@ export function ProjectForm({
             <SelectField
               label={t('project.siteManager')}
               value={field.value || null}
-              options={teamOptions}
+              options={teamOptionsFor('site_manager', field.value)}
               onChange={(value) => field.onChange(value ?? '')}
               placeholder={t('project.notDefined')}
               allowClear
@@ -193,7 +206,7 @@ export function ProjectForm({
             <SelectField
               label={t('project.engineer')}
               value={field.value || null}
-              options={teamOptions}
+              options={teamOptionsFor('structural_engineer', field.value)}
               onChange={(value) => field.onChange(value ?? '')}
               placeholder={t('project.notDefined')}
               allowClear
