@@ -30,6 +30,8 @@
 - [x] (fait le 2026-11-14 sur stock_db, 8 matériaux déliés : Rayan rahmani, Nassim, Haji Motawakil, Jaj) Nettoyer les anciens liens en base (fournisseurs déjà supprimés, ex. Haji Motawakil) : `UPDATE materials m JOIN suppliers s ON s.id = m.supplier_id SET m.supplier_id = NULL WHERE s.is_active = 0;`
 - [x] Écran Utilisateurs (`settings/users.tsx`) : boutons Activer / Désactiver / Supprimer (admin, pas sur son propre compte)
 - [x] Fiche matériau : icône crayon sur chaque dépôt → modifier la quantité du dépôt (`PATCH /api/inventory`, déjà présent sur le serveur ; pas sur "Sans dépôt")
+- [x] Suppression d'un matériau déjà commandé : au lieu de l'erreur "used in other records", `DELETE /api/materials/[id]` l'**archive** (`materials.is_active = false`, renommé "… (archivé xxxxxx)", stock supprimé) ; les commandes et mouvements gardent le lien. Matériaux archivés masqués partout (inventaire, stats, commandes, transferts, bibliothèque). Migration `prisma/migrations/20261120120000_add_material_is_active`
+- [ ] **Sur le serveur, AVANT le déploiement** : `ALTER TABLE materials ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;` dans `stock_db` (sinon le nouveau code plante)
 - [ ] **Déployer le backend `stock`** (sinon le mobile reçoit encore l'ancien comportement)
 - [ ] Test manuel sur téléphone (création commande, modification lignes, transfert "Sans dépôt", activer / désactiver / supprimer un utilisateur)
 - [ ] Commit des changements utilisateurs dans les deux dépôts
