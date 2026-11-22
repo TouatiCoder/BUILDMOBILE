@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { inventoryApi, materialsApi } from '@/api/endpoints';
@@ -169,7 +169,8 @@ export default function InventoryScreen() {
           />
         </StatGrid>
       ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+      {/* Grid (not a sideways scroll) so every action, e.g. "Nouveau matériau", stays visible. */}
+      <View style={styles.actionGrid}>
         {actions
           .filter((a) => a.show)
           .map((a) => (
@@ -180,7 +181,7 @@ export default function InventoryScreen() {
               </AppText>
             </Pressable>
           ))}
-      </ScrollView>
+      </View>
       <SearchInput value={search} onChangeText={setSearch} />
       <ChipGroup<StockFilter>
         value={filter}
@@ -273,8 +274,10 @@ function MaterialRow({ material }: { material: InventoryMaterial }) {
 
 const styles = StyleSheet.create({
   list: { padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: 760, alignSelf: 'center' },
+  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   action: {
-    width: 108,
+    flexGrow: 1,
+    flexBasis: '30%',
     padding: spacing.md,
     gap: spacing.sm,
     backgroundColor: colors.surface,
