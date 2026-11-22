@@ -7,13 +7,14 @@ import { z } from 'zod';
 
 import { inventoryApi } from '@/api/endpoints';
 import type { MaterialDetail, MaterialInput } from '@/api/types';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { SelectField, AppInput, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
-import { AppButton, AppCard, SectionHeader } from '@/components/primitives';
+import { AppButton, AppCard, IconButton, SectionHeader } from '@/components/primitives';
 import { useI18n } from '@/i18n/I18nProvider';
 import { parseDecimalInput, toNumberOrNull } from '@/lib/format';
 import { aggregateStock } from '@/lib/inventory';
-import { spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 /** Unit codes of the website's material form (app/inventory/materials/new/page.tsx). */
 const UNITS: { value: string; labelKey: string }[] = [
@@ -37,12 +38,13 @@ type Values = {
   customUnit: string;
   unitPrice: string;
   supplierId: string | null;
+  barcode: string;
   minStockLevel: string;
   maxStockLevel: string;
   description: string;
 };
 
-function initial(material?: MaterialDetail): Values {
+function initial(material?: MaterialDetail, initialBarcode?: string): Values {
   const unitKnown = !material || UNITS.some((u) => u.value === material.unit);
   const stock = material ? aggregateStock(material.inventory) : null;
   return {
@@ -54,6 +56,7 @@ function initial(material?: MaterialDetail): Values {
     unitPrice: material ? String(toNumberOrNull(material.unitPrice) ?? '') : '',
     // A soft-deleted supplier must not be re-saved on the material.
     supplierId: material?.supplier?.isActive === false ? null : material?.supplierId ?? null,
+    barcode: material?.barcode ?? initialBarcode ?? '',
     minStockLevel: stock ? String(stock.minThreshold) : '',
     maxStockLevel: stock?.maxThreshold != null ? String(stock.maxThreshold) : '',
     description: material?.description ?? '',
@@ -62,18 +65,23 @@ function initial(material?: MaterialDetail): Values {
 
 export function MaterialForm({
   material,
+  initialBarcode,
   submitLabel,
   submitting,
   onSubmit,
 }: {
   material?: MaterialDetail;
+  /** Code read by the scanner when the material is created from an unknown scan. */
+  initialBarcode?: string;
   submitLabel: string;
   submitting: boolean;
   onSubmit: (input: MaterialInput) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const tr = (fr: string, en: string, ar: string) => (locale === 'ar' ? ar : locale === 'en' ? en : fr);
   const filters = useQuery({ queryKey: ['inventory', 'filters'], queryFn: inventoryApi.filters });
   const [addingCategory, setAddingCategory] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const nonNegative = (msg: string) =>
     z.string().refine((v) => {
@@ -112,7 +120,7 @@ export function MaterialForm({
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(schema) as never, defaultValues: initial(material) });
+  } = useForm<Values>({ resolver: zodResolver(schema) as never, defaultValues: initial(material, initialBarcode) });
 
   const watchedCategory = useWatch({ control, name: 'category' });
   const watchedUnit = useWatch({ control, name: 'unit' });
@@ -134,6 +142,7 @@ export function MaterialForm({
       unitPrice: parseDecimalInput(v.unitPrice),
       category,
       supplierId: v.supplierId,
+      barcode: v.barcode.trim() || null,
       minStockLevel: parseDecimalInput(v.minStockLevel),
       maxStockLevel: parseDecimalInput(v.maxStockLevel),
     });
@@ -201,7 +210,34 @@ export function MaterialForm({
             />
           )}
         />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            {text('barcode', tr('QR code / code-barres', 'QR code / barcode', 'QR code / الباركود'), {
+              placeholder: tr('Scannez ou saisissez le code', 'Scan or type the code', 'سكاني ولا كتب الكود'),
+              autoCapitalize: 'none',
+              autoCorrect: false,
+            })}
+          </View>
+          <View style={{ paddingBottom: 6 }}>
+            <IconButton
+              icon="scan-outline"
+              color={colors.brand}
+              accessibilityLabel={tr('Scanner le code', 'Scan the code', 'سكاني الكود')}
+              onPress={() => setScanning(true)}
+            />
+          </View>
+        </View>
       </AppCard>
+      {scanning ? (
+        <BarcodeScanner
+          title={tr('Scanner le code du matériau', 'Scan the material code', 'سكاني كود المادة')}
+          onClose={() => setScanning(false)}
+          onScanned={(code) => {
+            setValue('barcode', code, { shouldDirty: true });
+            setScanning(false);
+          }}
+        />
+      ) : null}
       <AppCard style={{ gap: spacing.lg }}>
         <SectionHeader title={t('inventory.criticalThresholds')} />
         <View style={{ flexDirection: 'row', gap: spacing.md }}>

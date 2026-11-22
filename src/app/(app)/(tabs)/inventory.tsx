@@ -3,14 +3,17 @@ import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { inventoryApi } from '@/api/endpoints';
+import { ApiError } from '@/api/client';
+import { inventoryApi, materialsApi } from '@/api/endpoints';
 import type { InventoryMaterial } from '@/api/types';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { EmptyState, ErrorState, ListSkeleton } from '@/components/feedback';
 import { ChipGroup, SearchInput, SelectField, type Option } from '@/components/fields';
 import { StatCard, StatGrid } from '@/components/layout';
 import { AppText, StatusBadge, IconTile, type IconName } from '@/components/primitives';
-import { usePermissions } from '@/hooks/common';
+import { useConfirm, usePermissions } from '@/hooks/common';
 import { useActiveSuppliers } from '@/hooks/useActiveSuppliers';
+import { useToast } from '@/components/toast';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatNumber, toNumber } from '@/lib/format';
@@ -27,7 +30,40 @@ export default function InventoryScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
   const [category, setCategory] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const confirm = useConfirm();
+  const toast = useToast();
+  const tr = (fr: string, en: string, ar: string) => (locale === 'ar' ? ar : locale === 'en' ? en : fr);
   const debounced = useDebouncedValue(search);
+
+  // Scanned code: open the material carrying it, or offer to create one with it.
+  const handleScanned = async (code: string) => {
+    setScanning(false);
+    try {
+      const found = await materialsApi.byCode(code);
+      router.push({ pathname: '/materials/[id]', params: { id: found.id } });
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 404) {
+        toast.show('error', error instanceof Error ? error.message : tr('Erreur réseau', 'Network error', 'خطأ في الشبكة'));
+        return;
+      }
+      if (!can('manage_inventory')) {
+        toast.show('error', tr(`Aucun matériau avec le code ${code}.`, `No material has the code ${code}.`, `ما كاين حتى مادة بالكود ${code}.`));
+        return;
+      }
+      const create = await confirm({
+        title: tr('Code inconnu', 'Unknown code', 'كود غير معروف'),
+        message: tr(
+          `Aucun matériau n'a le code ${code}. Créer un nouveau matériau avec ce code ?`,
+          `No material has the code ${code}. Create a new material with this code?`,
+          `ما كاين حتى مادة بالكود ${code}. نزيدو مادة جديدة بهاد الكود؟`,
+        ),
+        confirmLabel: tr('Créer', 'Create', 'زيد'),
+        destructive: false,
+      });
+      if (create) router.push({ pathname: '/materials/new', params: { barcode: code } });
+    }
+  };
 
   const filters = useQuery({
     queryKey: ['inventory', 'filters'],
@@ -64,6 +100,7 @@ export default function InventoryScreen() {
         material.category ?? '',
         material.supplier?.name ?? '',
         material.description ?? '',
+        material.barcode ?? '',
       ].some((value) => value.toLocaleLowerCase().includes(term));
       if (!matchesSearch) return false;
       if (category && material.category !== category) return false;
@@ -102,6 +139,7 @@ export default function InventoryScreen() {
   );
 
   const actions: { icon: IconName; label: string; onPress: () => void; show: boolean }[] = [
+    { icon: 'scan-outline', label: tr('Scanner', 'Scan', 'سكاني'), onPress: () => setScanning(true), show: true },
     { icon: 'add-circle-outline', label: t('inventory.stockEntry'), onPress: () => router.push({ pathname: '/inventory/operation', params: { mode: 'entry' } }), show: can('manage_inventory') },
     { icon: 'swap-horizontal-outline', label: t('inventory.stockTransfer'), onPress: () => router.push({ pathname: '/inventory/operation', params: { mode: 'transfer' } }), show: can('manage_inventory') },
     { icon: 'cube-outline', label: t('inventory.newMaterial'), onPress: () => router.push('/materials/new'), show: can('manage_inventory') },
@@ -167,6 +205,7 @@ export default function InventoryScreen() {
   );
 
   return (
+    <>
     <FlatList
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.list}
@@ -188,6 +227,14 @@ export default function InventoryScreen() {
         )
       }
     />
+    {scanning ? (
+      <BarcodeScanner
+        title={tr('Scanner un matériau', 'Scan a material', 'سكاني مادة')}
+        onClose={() => setScanning(false)}
+        onScanned={(code) => void handleScanned(code)}
+      />
+    ) : null}
+    </>
   );
 }
 

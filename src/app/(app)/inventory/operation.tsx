@@ -1,16 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 
 import { inventoryApi, warehousesApi } from '@/api/endpoints';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
 import { ChipGroup, SelectField, AppInput, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
-import { AppButton, AppCard, AppText } from '@/components/primitives';
+import { AppButton, AppCard, AppText, IconButton } from '@/components/primitives';
 import { useApiMutation } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { parseDecimalInput, toNumber } from '@/lib/format';
-import { spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 type Mode = 'entry' | 'transfer';
 
@@ -24,7 +26,9 @@ const UNASSIGNED = '__unassigned__';
  */
 export default function InventoryOperationScreen() {
   const params = useLocalSearchParams<{ mode?: string; materialId?: string }>();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const tr = (fr: string, en: string, ar: string) => (locale === 'ar' ? ar : locale === 'en' ? en : fr);
+  const [scanning, setScanning] = useState(false);
   const [mode, setMode] = useState<Mode>(params.mode === 'transfer' ? 'transfer' : 'entry');
   const [materialId, setMaterialId] = useState<string | null>(params.materialId ?? null);
   const [warehouseId, setWarehouseId] = useState<string | null>(null);
@@ -149,16 +153,28 @@ export default function InventoryOperationScreen() {
         ]}
       />
       <AppCard style={{ gap: spacing.lg }}>
-        <SelectField
-          label={t('inventory.materials')}
-          required
-          value={materialId}
-          options={materialOptions}
-          onChange={setMaterialId}
-          placeholder={t('inventory.selectMaterialPlaceholder')}
-          error={errors.material}
-          searchable
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <SelectField
+              label={t('inventory.materials')}
+              required
+              value={materialId}
+              options={materialOptions}
+              onChange={setMaterialId}
+              placeholder={t('inventory.selectMaterialPlaceholder')}
+              error={errors.material}
+              searchable
+            />
+          </View>
+          <View style={{ paddingTop: 30 }}>
+            <IconButton
+              icon="scan-outline"
+              color={colors.brand}
+              accessibilityLabel={tr('Scanner le matériau', 'Scan the material', 'سكاني المادة')}
+              onPress={() => setScanning(true)}
+            />
+          </View>
+        </View>
         {mode === 'entry' ? (
           <SelectField
             label={t('inventory.destinationWarehouse')}
@@ -203,6 +219,25 @@ export default function InventoryOperationScreen() {
         />
         <AppInput label={t('inventory.notesOptional')} value={notes} onChangeText={setNotes} multiline />
       </AppCard>
+      {scanning ? (
+        <BarcodeScanner
+          title={tr('Scanner le matériau', 'Scan the material', 'سكاني المادة')}
+          onClose={() => setScanning(false)}
+          onScanned={(code) => {
+            setScanning(false);
+            const found = (materials.data ?? []).find((m) => m.barcode === code);
+            if (found) {
+              setMaterialId(found.id);
+              setErrors((current) => ({ ...current, material: '' }));
+            } else {
+              setErrors((current) => ({
+                ...current,
+                material: tr(`Aucun matériau avec le code ${code}.`, `No material has the code ${code}.`, `ما كاين حتى مادة بالكود ${code}.`),
+              }));
+            }
+          }}
+        />
+      ) : null}
     </Screen>
   );
 }

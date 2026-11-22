@@ -1,12 +1,13 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, View } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 
 import type { InventoryMaterial } from '@/api/types';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { AppInput, SelectField } from '@/components/fields';
 import { AppButton, AppText, StatusBadge } from '@/components/primitives';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatNumber, parseDecimalInput, toNumber } from '@/lib/format';
-import { colors, radius, shadows, spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 
 /** One article of a purchase order being edited. `materialId` is null until chosen. */
 export type OrderLineDraft = {
@@ -53,31 +54,6 @@ export function validateOrderLines(lines: OrderLineDraft[], tr: (fr: string, en:
 
 const sanitizeDecimal = (value: string) => value.replace(',', '.').replace(/[^0-9.]/g, '');
 
-/** Round "+" button, as on the website's order form, that adds an empty article. */
-export function AddArticleFab({ onPress, disabled, label }: { onPress: () => void; disabled?: boolean; label: string }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        {
-          width: 52,
-          height: 52,
-          borderRadius: radius.pill,
-          backgroundColor: colors.brand,
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
-        },
-        shadows.md,
-      ]}>
-      <Ionicons name="add" size={30} color="#FFFFFF" />
-    </Pressable>
-  );
-}
-
 /**
  * Articles of a purchase order, like the website: "+ Ajouter un article" adds an
  * empty article, the material is chosen inside it among the supplier's
@@ -123,6 +99,41 @@ export function OrderLinesEditor({
   };
 
   const canAdd = editable && supplierMaterials.some((m) => !lines.some((line) => line.materialId === m.id));
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string>();
+
+  // Quick add by QR / barcode: a scanned material already in the order gets +1,
+  // otherwise it is added as a new article (filling an empty article first).
+  const addScanned = (code: string) => {
+    setScanning(false);
+    const material = supplierMaterials.find((m) => m.barcode === code);
+    if (!material) {
+      setScanMessage(tr(
+        `Le code ${code} ne correspond à aucun matériau de ce fournisseur.`,
+        `The code ${code} matches no material of this supplier.`,
+        `الكود ${code} ما كيطابق حتى مادة ديال هاد المورد.`,
+      ));
+      return;
+    }
+    const existing = lines.find((line) => line.materialId === material.id);
+    if (existing) {
+      update(existing.key, { quantity: String(orderLineQuantity(existing) + 1) });
+      setScanMessage(tr(`${material.name} : quantité +1.`, `${material.name}: quantity +1.`, `${material.name}: الكمية +1.`));
+      return;
+    }
+    const filled: OrderLineDraft = {
+      ...emptyOrderLine(),
+      materialId: material.id,
+      name: material.name,
+      unit: material.unit,
+      unitPrice: String(toNumber(material.unitPrice) || ''),
+    };
+    const emptyIndex = lines.findIndex((line) => !line.materialId);
+    onChange(emptyIndex >= 0
+      ? lines.map((line, i) => (i === emptyIndex ? { ...filled, key: line.key } : line))
+      : [...lines, filled]);
+    setScanMessage(tr(`${material.name} ajouté.`, `${material.name} added.`, `${material.name} تزادت.`));
+  };
   const total = lines.reduce((sum, line) => sum + orderLineTotal(line), 0);
 
   return (
@@ -223,12 +234,31 @@ export function OrderLinesEditor({
       })}
 
       {editable ? (
-        <AppButton
-          title={tr('Ajouter un article', 'Add an article', 'زيد سلعة')}
-          icon="add-circle-outline"
-          variant="secondary"
-          onPress={() => onChange([...lines, emptyOrderLine()])}
-          disabled={!canAdd}
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <AppButton
+              title={tr('Ajouter un article', 'Add an article', 'زيد سلعة')}
+              icon="add-circle-outline"
+              variant="secondary"
+              onPress={() => onChange([...lines, emptyOrderLine()])}
+              disabled={!canAdd}
+            />
+          </View>
+          <AppButton
+            title={tr('Scanner', 'Scan', 'سكاني')}
+            icon="scan-outline"
+            variant="secondary"
+            onPress={() => { setScanMessage(undefined); setScanning(true); }}
+            disabled={supplierMaterials.length === 0}
+          />
+        </View>
+      ) : null}
+      {scanMessage ? <AppText variant="small">{scanMessage}</AppText> : null}
+      {scanning ? (
+        <BarcodeScanner
+          title={tr('Scanner un article', 'Scan an article', 'سكاني سلعة')}
+          onClose={() => setScanning(false)}
+          onScanned={addScanned}
         />
       ) : null}
       {editable && supplierMaterials.length > 0 && !canAdd ? (

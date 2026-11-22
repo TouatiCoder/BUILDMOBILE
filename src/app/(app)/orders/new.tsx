@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
 
 import { inventoryApi, ordersApi } from '@/api/endpoints';
 import { ErrorState, ListSkeleton } from '@/components/feedback';
@@ -9,7 +8,6 @@ import { DateField, SelectField } from '@/components/fields';
 import { Screen } from '@/components/layout';
 import { AppButton, AppCard, AppText, SectionHeader } from '@/components/primitives';
 import {
-  AddArticleFab,
   emptyOrderLine,
   OrderLinesEditor,
   orderLinePrice,
@@ -25,7 +23,7 @@ import { colors, spacing } from '@/theme/tokens';
 
 /**
  * New purchase order, mirroring the website's /costs/orders/new: choose the
- * supplier, then add articles with the "+" button and pick each article's
+ * supplier, then add articles with "Ajouter un article" and pick each article's
  * material among that supplier's materials. An order is a supply request:
  * requested quantities are not limited by stock.
  */
@@ -51,12 +49,6 @@ export default function NewOrderScreen() {
     if (!supplierId) return [];
     return (materials.data ?? []).map(withActiveSupplier).filter((m) => m.supplierId === supplierId);
   }, [materials.data, supplierId, withActiveSupplier]);
-
-  const canAddArticle = !!supplierId && supplierMaterials.some((m) => !lines.some((line) => line.materialId === m.id));
-  const addArticle = () => {
-    setError(undefined);
-    setLines((current) => [...current, emptyOrderLine()]);
-  };
 
   const submit = () => {
     if (!supplierId) {
@@ -84,14 +76,7 @@ export default function NewOrderScreen() {
   return (
     <Screen
       keyboard
-      footer={
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <AddArticleFab label={tr('Ajouter un article', 'Add an article', 'زيد سلعة')} onPress={addArticle} disabled={!canAddArticle} />
-          <View style={{ flex: 1 }}>
-            <AppButton title={t('costs.createOrderButton')} onPress={submit} loading={create.isPending} disabled={create.isPending} />
-          </View>
-        </View>
-      }>
+      footer={<AppButton title={t('costs.createOrderButton')} onPress={submit} loading={create.isPending} disabled={create.isPending} />}>
       <Stack.Screen options={{ title: t('costs.newOrderTitle') }} />
       {suppliers.isError ? <ErrorState error={suppliers.error} onRetry={() => suppliers.refetch()} /> : null}
       {materials.isError ? <ErrorState error={materials.error} onRetry={() => materials.refetch()} /> : null}
@@ -118,9 +103,9 @@ export default function NewOrderScreen() {
         <SectionHeader
           title={tr('Articles de la commande', 'Order articles', 'سلع الطلب')}
           subtitle={tr(
-            'Appuyez sur + pour ajouter un article, puis choisissez le matériau.',
-            'Tap + to add an article, then choose its material.',
-            'اضغط على + باش تزيد سلعة، ومن بعد اختار المادة.',
+            'Choisissez le matériau de chaque article. « Ajouter un article » ajoute une ligne.',
+            'Choose the material of each article. "Add an article" adds a line.',
+            'اختار المادة ديال كل سلعة. «زيد سلعة» كتزيد سطر جديد.',
           )}
         />
         {!supplierId ? (

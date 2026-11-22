@@ -89,6 +89,7 @@ export const inventoryApi = {
       supplier_id?: string | null;
       supplier?: { id?: string; name?: string } | null;
       supplier_name?: string | null;
+      barcode?: string | null;
       inventory?: Array<{
         id: string;
         quantity?: string | number | null;
@@ -149,6 +150,7 @@ export const inventoryApi = {
         companyId: row.companyId ?? '',
         createdAt: row.createdAt ?? '',
         updatedAt: row.updatedAt ?? '',
+        barcode: row.barcode ?? null,
         inventory,
         supplier: typeof row.supplier === 'object' && row.supplier?.id && row.supplier.name
           ? { id: row.supplier.id, name: row.supplier.name }
@@ -178,6 +180,12 @@ export const materialsApi = {
   create: (input: MaterialInput) => api.post<{ id: string }>('/api/materials', input),
   update: (id: string, input: MaterialInput) => api.put<MaterialDetail>(`/api/materials/${id}`, input),
   remove: (id: string) => api.delete<{ success: true }>(`/api/materials/${id}`),
+  /** Active material carrying this QR / barcode; the API answers 404 when none. */
+  byCode: (code: string) =>
+    api.get<{ id: string; name: string; unit: string; unitPrice: number | null; supplierId: string | null; barcode: string }>(
+      '/api/materials/by-code',
+      { code },
+    ),
   library: () => api.get<{ items: LibraryMaterial[] }>('/api/materials/library'),
 };
 

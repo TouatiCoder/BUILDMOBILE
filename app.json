@@ -36,6 +36,13 @@
       "./plugins/with-http-test-backend",
       "./plugins/with-disabled-network-inspector",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "BuildStock Pro utilise la caméra pour scanner les QR codes et codes-barres des matériaux.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#2563EB",

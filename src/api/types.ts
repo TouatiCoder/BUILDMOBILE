@@ -106,6 +106,8 @@ export type InventoryMaterial = {
   companyId: string;
   createdAt: string;
   updatedAt: string;
+  /** QR code or barcode printed on the material. */
+  barcode: string | null;
   inventory: InventoryRow[];
   supplier: { id: string; name: string } | null;
 };
@@ -123,6 +125,7 @@ export type MaterialInput = {
   unitPrice?: number | null;
   category?: string | null;
   supplierId?: string | null;
+  barcode?: string | null;
   minStockLevel?: number | null;
   maxStockLevel?: number | null;
 };

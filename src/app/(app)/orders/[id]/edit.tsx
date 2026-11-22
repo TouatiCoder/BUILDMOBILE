@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
 
 import { inventoryApi, ordersApi } from '@/api/endpoints';
 import type { PurchaseOrderDetail } from '@/api/types';
@@ -10,8 +9,6 @@ import { DateField, SelectField, type Option } from '@/components/fields';
 import { Screen } from '@/components/layout';
 import { AppButton, AppCard, AppText, SectionHeader } from '@/components/primitives';
 import {
-  AddArticleFab,
-  emptyOrderLine,
   OrderLinesEditor,
   orderLinePrice,
   orderLineQuantity,
@@ -28,7 +25,7 @@ import { colors, spacing } from '@/theme/tokens';
 /**
  * Edit a purchase order: header through PATCH /api/purchase-orders/[id]
  * (status, dates) and lines through PUT /api/purchase-orders/[id]/items
- * (articles: add with +, choose the material, quantity, unit price, remove).
+ * (articles: add, choose the material, quantity, unit price, remove).
  */
 export default function EditOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -80,7 +77,6 @@ function EditOrderForm({ order: o, title }: { order: PurchaseOrderDetail; title:
   const [error, setError] = useState<string | undefined>();
 
   const supplierMaterials = (materials.data ?? []).map(withActiveSupplier).filter((m) => m.supplierId === o.supplierId);
-  const canAddArticle = canEdit && supplierMaterials.some((m) => !lines.some((line) => line.materialId === m.id));
 
   const signature = (items: OrderLineDraft[]) =>
     JSON.stringify(items.map((l) => [l.materialId, orderLineQuantity(l), orderLinePrice(l)]));
@@ -116,18 +112,7 @@ function EditOrderForm({ order: o, title }: { order: PurchaseOrderDetail; title:
   return (
     <Screen
       keyboard
-      footer={canEdit ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <AddArticleFab
-            label={tr('Ajouter un article', 'Add an article', 'زيد سلعة')}
-            onPress={() => { setError(undefined); setLines((current) => [...current, emptyOrderLine()]); }}
-            disabled={!canAddArticle}
-          />
-          <View style={{ flex: 1 }}>
-            <AppButton title={t('common.save')} onPress={submit} loading={save.isPending} disabled={save.isPending} />
-          </View>
-        </View>
-      ) : undefined}>
+      footer={canEdit ? <AppButton title={t('common.save')} onPress={submit} loading={save.isPending} disabled={save.isPending} /> : undefined}>
       <Stack.Screen options={{ title }} />
       <AppCard style={{ gap: spacing.lg }}>
         <AppText variant="heading">{o.orderNumber}</AppText>
@@ -140,9 +125,9 @@ function EditOrderForm({ order: o, title }: { order: PurchaseOrderDetail; title:
         <SectionHeader
           title={`${t('costs.orderItems')} (${lines.length})`}
           subtitle={canEdit ? tr(
-            'Appuyez sur + pour ajouter un article, puis choisissez le matériau.',
-            'Tap + to add an article, then choose its material.',
-            'اضغط على + باش تزيد سلعة، ومن بعد اختار المادة.',
+            'Choisissez le matériau de chaque article. « Ajouter un article » ajoute une ligne.',
+            'Choose the material of each article. "Add an article" adds a line.',
+            'اختار المادة ديال كل سلعة. «زيد سلعة» كتزيد سطر جديد.',
           ) : undefined}
         />
         {materials.isLoading ? (

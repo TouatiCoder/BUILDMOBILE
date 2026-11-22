@@ -105,6 +105,7 @@ export default function MaterialDetailScreen() {
       <AppCard style={{ gap: spacing.xs }}>
         <KeyValue label={t('inventory.category')} value={m.category ?? t('inventory.uncategorized')} />
         <KeyValue label={t('inventory.unit')} value={m.unit} />
+        {m.barcode ? <KeyValue label={tr('QR code / code-barres', 'QR code / barcode', 'QR code / الباركود')} value={m.barcode} /> : null}
         <KeyValue label={t('inventory.unitPrice')} value={formatCurrency(unitPrice, locale)} />
         <KeyValue label={t('inventory.supplier')} value={m.supplier && m.supplier.isActive !== false ? m.supplier.name : t('inventory.noSupplier')} />
         <KeyValue label={t('inventory.minThreshold')} value={formatNumber(s.minThreshold, locale)} />
