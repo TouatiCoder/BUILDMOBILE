@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { inventoryApi, materialsApi } from '@/api/endpoints';
@@ -31,6 +31,9 @@ export default function InventoryScreen() {
   const [filter, setFilter] = useState<StockFilter>('all');
   const [category, setCategory] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  // 3 action tiles per row on regular phones, 2 on narrow ones / large fonts.
+  const { width, fontScale } = useWindowDimensions();
+  const actionBasis = width < 380 || fontScale > 1.15 ? '45%' : '30%';
   const confirm = useConfirm();
   const toast = useToast();
   const tr = (fr: string, en: string, ar: string) => (locale === 'ar' ? ar : locale === 'en' ? en : fr);
@@ -174,7 +177,7 @@ export default function InventoryScreen() {
         {actions
           .filter((a) => a.show)
           .map((a) => (
-            <Pressable key={a.label} accessibilityRole="button" onPress={a.onPress} style={({ pressed }) => [styles.action, pressed && { opacity: 0.8 }]}>
+            <Pressable key={a.label} accessibilityRole="button" onPress={a.onPress} style={({ pressed }) => [styles.action, { flexBasis: actionBasis }, pressed && { opacity: 0.8 }]}>
               <IconTile icon={a.icon} size={36} />
               <AppText variant="small" style={{ fontWeight: '600', color: colors.text }} numberOfLines={2}>
                 {a.label}

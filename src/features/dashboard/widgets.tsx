@@ -1,6 +1,6 @@
 import { router, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { InventoryMaterial, Project, PurchaseOrder, StockMovementRow } from '@/api/types';
 import { EmptyState, LoadingState } from '@/components/feedback';
@@ -55,6 +55,10 @@ export function CostVsBudgetCard({ totalCost, totalBudget, onPress }: { totalCos
 }
 
 export function QuickActions({ items }: { items: { icon: IconName; label: string; href: Href; tone?: Tone }[] }) {
+  // On narrow phones (or with large system font) the icon goes above the label
+  // so labels like "Transfert de stock" are never cut.
+  const { width, fontScale } = useWindowDimensions();
+  const compact = width < 380 || fontScale > 1.15;
   return (
     <View style={styles.actions}>
       {items.map((a) => (
@@ -63,9 +67,9 @@ export function QuickActions({ items }: { items: { icon: IconName; label: string
             accessibilityRole="button"
             accessibilityLabel={a.label}
             onPress={() => router.push(a.href)}
-            style={({ pressed }) => [styles.action, pressed && { opacity: 0.85 }]}>
-            <IconTile icon={a.icon} tone={a.tone ?? 'brand'} size={40} />
-            <AppText variant="label" color={colors.text} numberOfLines={2}>
+            style={({ pressed }) => [styles.action, compact && styles.actionCompact, pressed && { opacity: 0.85 }]}>
+            <IconTile icon={a.icon} tone={a.tone ?? 'brand'} size={compact ? 34 : 40} />
+            <AppText variant="label" color={colors.text} numberOfLines={2} style={styles.actionLabel}>
               {a.label}
             </AppText>
           </Pressable>
@@ -285,4 +289,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
+  actionCompact: { flexDirection: 'column', alignItems: 'flex-start', gap: spacing.sm },
+  // flexShrink lets the label wrap on 2 lines instead of overflowing the card.
+  actionLabel: { flexShrink: 1 },
 });
