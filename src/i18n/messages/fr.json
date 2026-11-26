@@ -496,7 +496,7 @@
     "concreteDosage350": "350 kg/m³ - Béton armé",
     "concreteDosageVolumeLabel": "Volume (m³)",
     "concreteCementResultLabel": "Ciment",
-    "concreteCementBagsResult": "Soit : {bags} sacs de 25 kg",
+    "concreteCementBagsResult": "Soit : {bags} sacs de 25 kg, à acheter : {whole} sacs",
     "concreteSandResultLabel": "Sable",
     "concreteGravelResultLabel": "Gravier",
     "concreteWaterResultLabel": "Eau",

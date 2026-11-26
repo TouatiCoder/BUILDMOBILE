@@ -496,7 +496,7 @@
     "concreteDosage350": "350 كجم/م³ - خرسانة مسلحة",
     "concreteDosageVolumeLabel": "الحجم (م³)",
     "concreteCementResultLabel": "الإسمنت",
-    "concreteCementBagsResult": "أي {bags} كيسًا من 25 كغ",
+    "concreteCementBagsResult": "أي {bags} كيسًا من 25 كغ، للشراء: {whole} كيسًا",
     "concreteSandResultLabel": "الرمل",
     "concreteGravelResultLabel": "الحصى",
     "concreteWaterResultLabel": "الماء",

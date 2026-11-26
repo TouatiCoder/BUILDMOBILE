@@ -16,9 +16,24 @@ export function toNumberOrNull(value: Decimalish | undefined): number | null {
 
 const intlLocale: Record<Locale, string> = { fr: 'fr-MA', en: 'en-US', ar: 'ar-MA' };
 
-/** Same currency as the website's formatCurrency (MAD, fr-MA grouping). */
+/** Non-breaking space: groups thousands without letting the number wrap. */
+const THOUSANDS_SPACE = ' ';
+
+/**
+ * French reading used everywhere in the app: thousands separated by a space and
+ * the comma as the ONLY decimal mark (1 950,9 kg ; 78,04 sacs ; 8 550,00 MAD).
+ * fr-MA used a dot for thousands (1.950,9), which users confused with a decimal
+ * point. Built on en-US output so the result is the same on every JS engine.
+ */
+function formatFrench(value: number, minimumFractionDigits: number, maximumFractionDigits: number): string {
+  const en = value.toLocaleString('en-US', { minimumFractionDigits, maximumFractionDigits });
+  return en.replace(/,/g, THOUSANDS_SPACE).replace('.', ',');
+}
+
+/** Amounts in MAD with 2 decimals, e.g. "8 550,00 MAD". */
 export function formatCurrency(amount: number, locale: Locale = 'fr', currency = 'MAD'): string {
   try {
+    if (locale === 'fr') return `${formatFrench(amount, 2, 2)} ${currency}`;
     return amount.toLocaleString(intlLocale[locale], { style: 'currency', currency, maximumFractionDigits: 2 });
   } catch {
     return `${amount.toFixed(2)} ${currency}`;
@@ -27,6 +42,7 @@ export function formatCurrency(amount: number, locale: Locale = 'fr', currency =
 
 export function formatNumber(value: number, locale: Locale = 'fr', maximumFractionDigits = 2): string {
   try {
+    if (locale === 'fr') return formatFrench(value, 0, maximumFractionDigits);
     return value.toLocaleString(intlLocale[locale], { maximumFractionDigits });
   } catch {
     return String(Math.round(value * 100) / 100);

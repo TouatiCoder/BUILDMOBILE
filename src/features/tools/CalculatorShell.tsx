@@ -8,12 +8,12 @@ import type { ToolCalculation, ToolType } from '@/api/types';
 import { Banner, ErrorState, ListSkeleton } from '@/components/feedback';
 import { SelectField, AppInput } from '@/components/fields';
 import { ListGroup, ListRow, Screen } from '@/components/layout';
-import { AppText, AppButton, AppCard, SectionHeader } from '@/components/primitives';
-import { useApiMutation, usePermissions } from '@/hooks/common';
+import { AppText, AppButton, AppCard, IconButton, SectionHeader } from '@/components/primitives';
+import { useApiMutation, useConfirm, usePermissions } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { CalculationErrorCode } from '@/lib/calculators/validation';
 import { formatDateTime } from '@/lib/format';
-import { spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 /** Error code → message key, same mapping as the website calculators. */
 export function useCalcErrorText() {
@@ -75,6 +75,12 @@ export function CalculatorShell({
     successMessage: savedMessage,
     onSuccess: () => setNotes(''),
   });
+  const confirm = useConfirm();
+  const remove = useApiMutation({
+    mutationFn: toolsApi.removeCalculation,
+    invalidate: [['tools', 'calculations']],
+    successMessage: locale === 'ar' ? 'تم حذف الحساب' : locale === 'en' ? 'Calculation deleted' : 'Calcul supprimé',
+  });
 
   if (!allowed) {
     return (
@@ -127,6 +133,22 @@ export function CalculatorShell({
                 icon="document-text-outline"
                 title={summarize(c)}
                 subtitle={[c.project?.name, c.notes, formatDateTime(c.createdAt, locale)].filter(Boolean).join(' · ')}
+                right={
+                  <IconButton
+                    icon="trash-outline"
+                    color={colors.danger}
+                    disabled={remove.isPending}
+                    accessibilityLabel={locale === 'ar' ? 'حذف الحساب' : locale === 'en' ? 'Delete calculation' : 'Supprimer le calcul'}
+                    onPress={async () => {
+                      const message = locale === 'ar'
+                        ? 'حذف هذا الحساب المسجل؟ لا يمكن التراجع.'
+                        : locale === 'en'
+                          ? 'Delete this saved calculation? This cannot be undone.'
+                          : 'Supprimer ce calcul enregistré ? Cette action est définitive.';
+                      if (await confirm({ message })) remove.mutate(c.id);
+                    }}
+                  />
+                }
               />
             ))}
           </ListGroup>

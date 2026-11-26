@@ -150,7 +150,14 @@ export default function ConcreteCalculatorScreen() {
           {dosageResult.ok ? (
             <View>
               <ResultRow label={t('common.concreteCementResultLabel')} value={`${fmt(dosageResult.value.cementKg)} kg`} strong />
-              <ResultRow label="" value={t('common.concreteCementBagsResult', { bags: dosageResult.value.cementBags25kg })} />
+              <ResultRow
+                label=""
+                value={t('common.concreteCementBagsResult', {
+                  // Formatted like every other number (comma = decimals); bags are bought whole, so round up.
+                  bags: formatNumber(dosageResult.value.cementBags25kg, locale, 2),
+                  whole: formatNumber(Math.ceil(dosageResult.value.cementBags25kg - 1e-9), locale, 0),
+                })}
+              />
               <ResultRow label={t('common.concreteSandResultLabel')} value={`${fmt(dosageResult.value.sandKg)} kg`} />
               <ResultRow label={t('common.concreteGravelResultLabel')} value={`${fmt(dosageResult.value.gravelKg)} kg`} />
               <ResultRow label={t('common.concreteWaterResultLabel')} value={`${fmt(dosageResult.value.waterL)} L`} />

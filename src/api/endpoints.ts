@@ -243,6 +243,8 @@ export const toolsApi = {
   calculations: (type?: ToolType) => api.get<{ items: ToolCalculation[] }>('/api/tools/calculations', { type }),
   save: (input: { toolType: ToolType; projectId: string | null; notes: string | null; input: Record<string, unknown>; output: Record<string, unknown> }) =>
     api.post<ToolCalculation>('/api/tools/calculations', input),
+  /** Deletes one of the user's saved calculations. */
+  removeCalculation: (id: string) => api.delete<{ success: true; id: string }>(`/api/tools/calculations/${id}`),
 };
 
 export const checklistsApi = {

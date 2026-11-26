@@ -496,7 +496,7 @@
     "concreteDosage350": "350 kg/m³ - Reinforced concrete",
     "concreteDosageVolumeLabel": "Volume (m³)",
     "concreteCementResultLabel": "Cement",
-    "concreteCementBagsResult": "That is: {bags} bags of 25 kg",
+    "concreteCementBagsResult": "That is: {bags} bags of 25 kg, to buy: {whole} bags",
     "concreteSandResultLabel": "Sand",
     "concreteGravelResultLabel": "Gravel",
     "concreteWaterResultLabel": "Water",
