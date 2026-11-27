@@ -18,7 +18,7 @@ import {
   QuickActions,
   StockAlertsSection,
 } from '@/features/dashboard/widgets';
-import { usePermissions } from '@/hooks/common';
+import { useApiMutation, useConfirm, usePermissions } from '@/hooks/common';
 import { useI18n } from '@/i18n/I18nProvider';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { aggregateStock } from '@/lib/inventory';
@@ -67,6 +67,12 @@ export default function DashboardScreen() {
     refetchIntervalInBackground: false,
   });
   const calculations = useQuery({ queryKey: ['tools', 'calculations', 'all'], queryFn: () => toolsApi.calculations(), enabled: isFieldRole });
+  const confirm = useConfirm();
+  const removeCalculation = useApiMutation({
+    mutationFn: toolsApi.removeCalculation,
+    invalidate: [['tools', 'calculations']],
+    successMessage: locale === 'ar' ? 'تم حذف الحساب' : locale === 'en' ? 'Calculation deleted' : 'Calcul supprimé',
+  });
   const checklists = useQuery({
     queryKey: ['checklists', { status: 'in_progress', type: 'all' }],
     queryFn: () => checklistsApi.list({ status: 'in_progress' }),
@@ -229,6 +235,22 @@ export default function DashboardScreen() {
                     icon="document-text-outline"
                     title={t(`common.${c.toolType}Label`, undefined, c.toolType)}
                     subtitle={[c.project?.name, formatDate(c.createdAt, locale)].filter(Boolean).join(' · ')}
+                    right={
+                      <IconButton
+                        icon="trash-outline"
+                        color={colors.danger}
+                        disabled={removeCalculation.isPending}
+                        accessibilityLabel={locale === 'ar' ? 'حذف الحساب' : locale === 'en' ? 'Delete calculation' : 'Supprimer le calcul'}
+                        onPress={async () => {
+                          const message = locale === 'ar'
+                            ? 'حذف هذا الحساب المسجل؟ لا يمكن التراجع.'
+                            : locale === 'en'
+                              ? 'Delete this saved calculation? This cannot be undone.'
+                              : 'Supprimer ce calcul enregistré ? Cette action est définitive.';
+                          if (await confirm({ message })) removeCalculation.mutate(c.id);
+                        }}
+                      />
+                    }
                   />
                 ))}
               </ListGroup>
